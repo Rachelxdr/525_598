@@ -352,11 +352,21 @@ impl Node {
                 println!("trs.aa1: {:?}", trs.aa1);
                 println!("trs.cs: {:?}", trs.cs);
                 println!("trs.zs: {:?}", trs.zs);
-                let trs_vec: Vec<u8>;
-                let trs_aa1_vec: Vec<u8> = trs.aa1.compress().as_bytes().to_vec();
+                let mut trs_vec: Vec<u8> = Vec::new();
+                let mut trs_aa1_vec: Vec<u8> = trs.aa1.compress().as_bytes().to_vec();
+                trs_vec.append(&mut trs_aa1_vec);
+                for cs_each in trs.cs.iter() {
+                    trs_vec.append(&mut cs_each.to_bytes().to_vec());
+                }
+                for zs_each in trs.zs.iter() {
+                    trs_vec.append(&mut zs_each.to_bytes().to_vec());
+                }
+
+                println!("trs_vec: {:?}", trs_vec);
+
                 // let trs_cs_vec: Vec<u8> = trs.cs.to_bytes();
                 // let trs_zs_vec: Vec<u8> = trs.zs.to_bytes();
-                println!("trs_aa1_vec: {:?}", trs_aa1_vec);
+                // println!("trs_aa1_vec: {:?}", trs_aa1_vec);
                 // println!("trs_cs_vec: {:?}", trs_cs_vec);
                 // println!("trs_zs_vec: {:?}", trs_zs_vec);
                 break;
