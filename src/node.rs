@@ -249,7 +249,7 @@ impl Node {
 
                 },
                 Err(TryRecvError::Empty) => {
-                    if (self.parties_status.len() == 1) {
+                    if (self.parties_status.len() == 7) {
                         println!("party status len is 1");
                         break;
                     }
@@ -340,7 +340,7 @@ impl Node {
                 &self.process_received();
                 println!("received done, len: {:?}", self.parties_status.len());
                 // if (self.parties_status.len() != self.membership_list.len()) {
-                if (self.parties_status.len() < 1) {
+                if (self.parties_status.len() < 7) {
                     continue;
                 }
                 for (key, val) in self.parties_status.iter() {
@@ -485,10 +485,10 @@ impl Node {
         // msg.push_str(&public_str);
         // msg.push_str(self.public_key.as_bytes().to_owned());
         // println!("sending to {}, msg: {}", INTRODUCER_IP.to_string(), msg);
-        // for party in self.membership_list.iter() {
-        //     self.send_message(party.to_string(), msg_to_send.clone());
-        // }
-        self.send_message(INTRODUCER_IP.to_string(), msg_to_send);
+        for party in self.membership_list.iter() {
+            self.send_message(party.to_string(), msg_to_send.clone());
+        }
+        // self.send_message(INTRODUCER_IP.to_string(), msg_to_send);
     }
 
     // pub fn send_message_bytes(&self, target: String, msg: Vec<u8>) {
@@ -506,7 +506,7 @@ impl Node {
 
         let local_param = "192.168.31.154:6001".to_string();
 
-        let socket = net::UdpSocket::bind(local_param).expect("client failed to bind");
+        let socket = net::UdpSocket::bind(bind_param).expect("client failed to bind");
 
         let mut connect_param = target.clone();
         connect_param.push_str(PORT);
@@ -604,7 +604,7 @@ pub fn server_thread_create(tx: std::sync::mpsc::Sender<Vec<u8>> ) {
 
     let local_param = "192.168.31.154:6000".to_string();
 
-    let server = net::UdpSocket::bind(local_param).expect("Listener failed to bind");
+    let server = net::UdpSocket::bind(bind_param).expect("Listener failed to bind");
     server.set_nonblocking(true).expect("failed to initialize non-blocking");
 
     // let mut clients = vec![]; // vector os connected clients
