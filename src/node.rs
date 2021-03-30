@@ -147,20 +147,30 @@ impl Node {
 
         println!("message vec received: {:?}", msg);
         let msg_type: u8 = msg[0];
-        let msg_len: u8 = msg[1];
-        let is_anonymous: u8 = msg[2];
-        let msg_end: usize = (msg_len + 3).into();
-        let msg_vec: Vec<u8> = (&msg[3..msg_end]).to_vec();
-        let mut src_addr:String = "".to_string();
-        if (is_anonymous == 0) {
-            let addr_vec: Vec<u8> = (&msg[msg_end..]).to_vec();
-            src_addr = src_addr.replace("", &String::from_utf8(addr_vec).unwrap());
-            println!("src_addr parsed: {:?}", src_addr);
-        }
+        // let msg_len: u8 = msg[1];
+        // let is_anonymous: u8 = msg[2];
+        // let msg_end: usize = (msg_len + 3).into();
+        // let msg_vec: Vec<u8> = (&msg[3..msg_end]).to_vec();
+        // let mut src_addr:String = "".to_string();
+        // if (is_anonymous == 0) {
+        //     let addr_vec: Vec<u8> = (&msg[msg_end..]).to_vec();
+        //     src_addr = src_addr.replace("", &String::from_utf8(addr_vec).unwrap());
+        //     println!("src_addr parsed: {:?}", src_addr);
+        // }
 
-        println!("msg_vec received: {:?}", msg_vec);
+        // println!("msg_vec received: {:?}", msg_vec);
 
         if (msg_type == 0) {
+            let msg_len: u8 = msg[1];
+            let is_anonymous: u8 = msg[2];
+            let msg_end: usize = (msg_len + 3).into();
+            let msg_vec: Vec<u8> = (&msg[3..msg_end]).to_vec();
+            let mut src_addr:String = "".to_string();
+            if (is_anonymous == 0) {
+                let addr_vec: Vec<u8> = (&msg[msg_end..]).to_vec();
+                src_addr = src_addr.replace("", &String::from_utf8(addr_vec).unwrap());
+                println!("src_addr parsed: {:?}", src_addr);
+            }
             match Trace_key::from_bytes(&msg_vec) {
                 Some(incoming_pk) => {
                     let received_pk: Trace_key = incoming_pk;
@@ -363,6 +373,8 @@ impl Node {
                 }
 
                 println!("trs_vec: {:?}", trs_vec);
+                // [msg_type, spki_len, aa1_len, cs_len, zs_len, is_anonymous]
+
 
                 // let trs_cs_vec: Vec<u8> = trs.cs.to_bytes();
                 // let trs_zs_vec: Vec<u8> = trs.zs.to_bytes();
