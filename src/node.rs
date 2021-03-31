@@ -204,23 +204,23 @@ impl Node {
                 } 
             }
         } else if (msg_type == 1) {
-            let spk_len: u8 = msg[1];
-                    let aa1_len: u8 = msg[2];
-                    let cs_len: u8 = msg[3];
-                    let num_cs: u8 = msg[4];
-                    let zs_len: u8 = msg[5];
-                    let num_zs: u8 = msg[6];
-                    let is_anonymous: u8 = msg[7];
-                    let num_vec: u8 = cs_len / 7; // change num parties
+            let spk_len: usize = msg[1].into();
+                    let aa1_len: usize = msg[2].into();
+                    let cs_len: usize = msg[3].into();
+                    let num_cs: usize = msg[4].into();
+                    let zs_len: usize = msg[5].into();
+                    let num_zs: usize = msg[6].into();
+                    let is_anonymous: usize = msg[7].into();
+                    let num_vec: usize = cs_len / 7; // change num parties
 
                     let spk_index: usize = 8;
-                    let spk_index_end: usize = (8 + spk_len).into();
+                    let spk_index_end: usize = 8 + spk_len;
                     let aa1_index: usize = spk_index_end;
-                    let aa1_index_end: usize = (aa1_index as u8 + aa1_len).into();
+                    let aa1_index_end: usize = aa1_index + aa1_len;
                     let cs_index: usize = aa1_index_end;
-                    let cs_index_end: usize = (cs_index as u8 + cs_len).into();
+                    let cs_index_end: usize = cs_index+ cs_len;
                     let zs_index: usize = cs_index_end;
-                    let zs_index_end: usize = (zs_index as u8 + zs_len).into();
+                    let zs_index_end: usize = zs_index + zs_len;
 
                     println!("spk_len: {:?}, spk_index : {:?}, spk_index_end: {:?}", spk_len, spk_index, spk_index_end);
                     println!("aa1_len: {:?}, aa1_index : {:?}, aa1_index_end: {:?}", aa1_len, aa1_index, aa1_index_end);
