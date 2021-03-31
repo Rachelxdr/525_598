@@ -572,6 +572,7 @@ impl Node {
 
     fn process_received_trs_byte(&mut self) { // TODO 3/31, create trs union set
         println!("rx address in process: {:p}", &self.rx);
+        let mut num_empty: usize = 0;
         // let mut msg_received: Vec<String> = vec![];
         loop {
             // println!("loop");
@@ -584,10 +585,11 @@ impl Node {
 
                 },
                 Err(TryRecvError::Empty) => {
-                    if (self.signatures_set.len() == NUM_PARTIES) {
+                    if (self.signatures_set.len() == NUM_PARTIES && num_empty >= self.membership_list.len() * self.signature_byte_set.len()) {
                         println!("process_received_trs_byte full");
                         break;
                     }
+                    num_empty += 1;
                     // println!("No more msgs");
                     // break;
                 },
