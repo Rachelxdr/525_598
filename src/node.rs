@@ -589,6 +589,9 @@ impl Node {
                         println!("process_received_trs_byte full");
                         break;
                     }
+                    if (num_empty % 50 == 0) {
+                        println!("num_empty: {:?}", num_empty);
+                    }
                     num_empty += 1;
                     // println!("No more msgs");
                     // break;
