@@ -152,7 +152,16 @@ impl Node {
     //     s.finish();
     // }
     
-    fn process_message(&mut self, msg:Vec<u8>) {
+    fn multicast_trs_set(&mut self) {
+        for sig_byte in self.signature_byte_set.iter() {
+            for party in self.membership_list.iter() {
+                self.send_message(party.to_string(), sig_byte.clone());
+            }
+        }
+    }
+
+
+    fn process_message(&mut self, mut msg:Vec<u8>) {
 
         println!("message vec received: {:?}", msg);
         let msg_type: u8 = msg[0];
@@ -208,6 +217,7 @@ impl Node {
         } else if (msg_type == 1) {
 
             if (!self.signature_byte_set.contains(&msg)) {
+                msg[0] = 2;
                 self.signature_byte_set.insert(msg.clone());
             }
 
@@ -215,7 +225,7 @@ impl Node {
 
         } else if (msg_type == 2) {
 
-        
+            
             let spk_len: usize = msg[1].into();
             let aa1_len: usize = msg[2].into();
             let cs_len: usize = msg[3].into();
@@ -426,6 +436,38 @@ impl Node {
         
     }
 
+    fn process_received_trs_byte(&mut self) { // TODO 3/31, create trs union set
+        println!("rx address in process: {:p}", &self.rx);
+        // let mut msg_received: Vec<String> = vec![];
+        loop {
+            // println!("loop");
+            match self.rx.try_recv() {
+                Ok(msg) => {
+                    println!("received from channel");
+                    // TODO process message here
+                    &self.process_message(msg.clone());
+                    // msg_received.push(msg);
+
+                },
+                Err(TryRecvError::Empty) => {
+                    if (self.signatures_set.len() == NUM_PARTIES) {
+                        // println!("party status len is 1");
+                        break;
+                    }
+                    // println!("No more msgs");
+                    // break;
+                },
+                Err(TryRecvError::Disconnected) => {
+                    println!("disconnected");
+                    break;
+                },
+                Err(e) => {
+                    println!("other error : {:?}", e);
+                    break;
+                }
+            }
+        }
+    }
 
     fn process_received_trs(&mut self) { // TODO 3/31, create trs union set
         println!("rx address in process: {:p}", &self.rx);
@@ -602,7 +644,8 @@ impl Node {
                 // TODO: 3/31: send spki_trs_vec too all parties
                 &self.multicast_trs(spki_trs_vec.clone());
                 &self.process_received_trs(); // 
-
+                &self.multicast_trs_set();
+                &self.process_received_trs_byte(); 
 
                 // let mut trs_vec: Vec<u8> = Vec::new();
                 // let mut trs_aa1_vec: Vec<u8> = trs.aa1.compress().as_bytes().to_vec();
@@ -614,7 +657,7 @@ impl Node {
                 //     trs_vec.append(&mut zs_each.to_bytes().to_vec());
                 // }
 
-                println!("trs_vec: {:?}", spki_trs_vec);
+                println!("YAY");
 
                 // if (spki_trs_vec[0] == 1) {
                 //     let spk_len: u8 = spki_trs_vec[1];
