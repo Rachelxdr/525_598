@@ -577,7 +577,7 @@ impl Node {
             // println!("loop");
             match self.rx.try_recv() {
                 Ok(msg) => {
-                    println!("received from channel");
+                    println!("process_received_trs_byte received from channel");
                     // TODO process message here
                     &self.process_message(msg.clone());
                     // msg_received.push(msg);
@@ -585,7 +585,7 @@ impl Node {
                 },
                 Err(TryRecvError::Empty) => {
                     if (self.signatures_set.len() == NUM_PARTIES) {
-                        // println!("party status len is 1");
+                        println!("process_received_trs_byte full");
                         break;
                     }
                     // println!("No more msgs");
@@ -610,7 +610,7 @@ impl Node {
             // println!("loop");
             match self.rx.try_recv() {
                 Ok(msg) => {
-                    println!("received from channel");
+                    println!("process_received_trs received from channel");
                     // TODO process message here
                     &self.process_message(msg.clone());
                     // msg_received.push(msg);
@@ -618,7 +618,7 @@ impl Node {
                 },
                 Err(TryRecvError::Empty) => {
                     if (self.signature_byte_set.len() == NUM_PARTIES) {
-                        // println!("party status len is 1");
+                        println!("process_received_trs full");
                         break;
                     }
                     // println!("No more msgs");
