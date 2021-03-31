@@ -58,7 +58,7 @@ use crate::{
 //2. source $HOME/.cargo/env
 const NUM_PARTIES: usize = 7;
 const TRS_VEC_SIZE: usize = 32;
-const MSG_SIZE:usize = 256;
+const MSG_SIZE:usize = 2048;
 const INTRODUCER_IP: &str = "192.168.31.154"; // 192.168.31.154 for local test, 172.22.94.218 for vm test, "10.193.227.18"
 const PORT: &str = ":6000";
 const CLIENT_PORT: &str = ":6001";
