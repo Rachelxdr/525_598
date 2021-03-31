@@ -163,7 +163,7 @@ impl Node {
 
     fn process_message(&mut self, mut msg:Vec<u8>) {
 
-        println!("message vec received: {:?}", msg);
+        // println!("message vec received: {:?}", msg);
         let msg_type: u8 = msg[0];
         // let msg_len: u8 = msg[1];
         // let is_anonymous: u8 = msg[2];
@@ -764,11 +764,11 @@ impl Node {
                     println!("src: {:?} flag: {:?}", key, val.1);
                 }
                 let trs: Signature = self.create_trs();
-                println!("created trs: {:?}", trs);
-                // break;
-                println!("trs.aa1: {:?}", trs.aa1);
-                println!("trs.cs: {:?}", trs.cs);
-                println!("trs.zs: {:?}", trs.zs);
+                // println!("created trs: {:?}", trs);
+                // // break;
+                // println!("trs.aa1: {:?}", trs.aa1);
+                // println!("trs.cs: {:?}", trs.cs);
+                // println!("trs.zs: {:?}", trs.zs);
 
                 let aa1_r: RistrettoPoint = trs.aa1.clone();
                 let cs_r: Vec<Scalar> = trs.cs.clone();
