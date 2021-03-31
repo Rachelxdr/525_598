@@ -250,8 +250,8 @@ impl Node {
                     }
 
                     let received_spk: PublicKey = PublicKey::from(spk_arr);
-                    assert_eq!(received_spk, self.spk);
-                    println!("spk assert passed");
+                    // assert_eq!(received_spk, self.spk);
+                    // println!("spk assert passed");
 
                     let mut arr = [0u8; 32];
                     arr.copy_from_slice(&aa1_arr);
