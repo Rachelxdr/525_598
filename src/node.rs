@@ -585,7 +585,7 @@ impl Node {
 
                 },
                 Err(TryRecvError::Empty) => {
-                    if (self.signatures_set.len() == NUM_PARTIES && num_empty >= self.membership_list.len() * self.signature_byte_set.len()) {
+                    if (self.signatures_set.len() == NUM_PARTIES && num_empty >= self.membership_list.len() * self.membership_list.len() * self.signature_byte_set.len()) {
                         println!("process_received_trs_byte full");
                         break;
                     }
