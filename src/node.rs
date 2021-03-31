@@ -248,11 +248,11 @@ impl Node {
             println!("zs_len: {:?}, num_zs: {:?}, zs_index : {:?}, zs_index_end: {:?}", zs_len, num_zs, zs_index, zs_index_end);
 
             let spk_vec: Vec<u8> = (&msg[spk_index..spk_index_end]).to_vec();
-            println!("spk_vec len: {:?} spk_vec: {:?}", spk_vec.len(), spk_vec);
+            // println!("spk_vec len: {:?} spk_vec: {:?}", spk_vec.len(), spk_vec);
             let aa1_vec: Vec<u8> = (&msg[aa1_index..aa1_index_end]).to_vec();
-            println!("aa1_vec len: {:?} aa1_vec: {:?}", aa1_vec.len(), aa1_vec);
+            // println!("aa1_vec len: {:?} aa1_vec: {:?}", aa1_vec.len(), aa1_vec);
             let cs_vec: Vec<u8> = (&msg[cs_index..cs_index_end]).to_vec(); // 32 * num_parties
-            println!("cs_vec len: {:?} cs_vec: {:?}", cs_vec.len(), cs_vec);
+            // println!("cs_vec len: {:?} cs_vec: {:?}", cs_vec.len(), cs_vec);
             let zs_vec: Vec<u8> = (&msg[zs_index..zs_index_end]).to_vec(); // 32 * num_parties
 
             let mut spk_arr: [u8; 32] = [0; 32];
@@ -337,8 +337,8 @@ impl Node {
             // println!("zs assert passed");
 
             let re_trs: Signature = Signature{aa1: re_aa1, cs: re_cs_vec, zs: re_zs_vec};
-            println!("re_spk process message: {:?}", received_spk);
-            println!("re_trs process message: {:?}", re_trs);
+            // println!("re_spk process message: {:?}", received_spk);
+            // println!("re_trs process message: {:?}", re_trs);
             
             // if (!self.signature_byte_set.contains())
 
@@ -476,7 +476,9 @@ impl Node {
                 // if (!self.signature_byte_set.contains())
 
                 match self.signatures_set.get(&received_spk) {
-                    Some(_) => (),
+                    Some(_) => {
+                        println!("NEW decode, NOthing to the map!");
+                    },
                     None=> {
                         self.signatures_set.insert(received_spk.clone(), re_trs);
                         println!("inserted new signature FROM SET!");
