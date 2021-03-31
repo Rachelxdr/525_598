@@ -16,6 +16,10 @@ use std::hash::{Hash, Hasher};
 // use rsa::{PublicKey, RSAPrivateKey, RSAPublicKey, PaddingScheme};
 use rand::rngs::OsRng;
 use rand_core::{RngCore, Error, impls};
+use curve25519_dalek::{
+    constants::RISTRETTO_BASEPOINT_POINT, scalar::Scalar,
+    traits::Identity,
+};
 use x25519_dalek::{EphemeralSecret, PublicKey};
 use curve25519_dalek::ristretto::{CompressedRistretto, RistrettoPoint};
 // use fujisaki_ringsig::{gen_keypair, sign, verify, Tag};
@@ -52,6 +56,8 @@ use crate::{
 //To install rust and cargo on vms:
 //1. curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 //2. source $HOME/.cargo/env
+const NUM_PARTIES: usize = 7;
+const TRS_VEC_SIZE: usize = 32;
 const MSG_SIZE:usize = 256;
 const INTRODUCER_IP: &str = "192.168.31.154"; // 192.168.31.154 for local test, 172.22.94.218 for vm test, "10.193.227.18"
 const PORT: &str = ":6000";
@@ -68,7 +74,7 @@ pub struct Node {
     spk: x25519_dalek::PublicKey,
     // secret_key: fujisaki_ringsig::PrivateKey,
     // public_key: fujisaki_ringsig::PublicKey,
-
+    signatures_set: HashMap<x25519_dalek::PublicKey, Signature>,
     secret_key: PrivateKey,
     public_key: Trace_key,
 
@@ -119,6 +125,7 @@ impl Node {
                      "172.22.156.223".to_string(), // vm6
                      "172.22.94.221".to_string()], // vm7
             parties_status: HashMap::new(),
+            signatures_set: HashMap::new(),
             ssk: sk,
             spk: pk,
             secret_key: s_sk,
@@ -196,6 +203,131 @@ impl Node {
                     println!("incoming key error");
                 } 
             }
+        } else if (msg_type == 1) {
+            let spk_len: u8 = msg[1];
+                    let aa1_len: u8 = msg[2];
+                    let cs_len: u8 = msg[3];
+                    let num_cs: u8 = msg[4];
+                    let zs_len: u8 = msg[5];
+                    let num_zs: u8 = msg[6];
+                    let is_anonymous: u8 = msg[7];
+                    let num_vec: u8 = cs_len / 7; // change num parties
+
+                    let spk_index: usize = 8;
+                    let spk_index_end: usize = (8 + spk_len).into();
+                    let aa1_index: usize = spk_index_end;
+                    let aa1_index_end: usize = (aa1_index as u8 + aa1_len).into();
+                    let cs_index: usize = aa1_index_end;
+                    let cs_index_end: usize = (cs_index as u8 + cs_len).into();
+                    let zs_index: usize = cs_index_end;
+                    let zs_index_end: usize = (zs_index as u8 + zs_len).into();
+
+                    println!("spk_len: {:?}, spk_index : {:?}, spk_index_end: {:?}", spk_len, spk_index, spk_index_end);
+                    println!("aa1_len: {:?}, aa1_index : {:?}, aa1_index_end: {:?}", aa1_len, aa1_index, aa1_index_end);
+                    println!("cs_len: {:?}, num_cs: {:?}, cs_index : {:?}, cs_index_end: {:?}",cs_len, num_cs, cs_index, cs_index_end);
+                    println!("zs_len: {:?}, num_zs: {:?}, zs_index : {:?}, zs_index_end: {:?}", zs_len, num_zs, zs_index, zs_index_end);
+
+                    let spk_vec: Vec<u8> = (&msg[spk_index..spk_index_end]).to_vec();
+                    println!("spk_vec len: {:?} spk_vec: {:?}", spk_vec.len(), spk_vec);
+                    let aa1_vec: Vec<u8> = (&msg[aa1_index..aa1_index_end]).to_vec();
+                    println!("aa1_vec len: {:?} aa1_vec: {:?}", aa1_vec.len(), aa1_vec);
+                    let cs_vec: Vec<u8> = (&msg[cs_index..cs_index_end]).to_vec(); // 32 * num_parties
+                    println!("cs_vec len: {:?} cs_vec: {:?}", cs_vec.len(), cs_vec);
+                    let zs_vec: Vec<u8> = (&msg[zs_index..zs_index_end]).to_vec(); // 32 * num_parties
+
+                    let mut spk_arr: [u8; 32] = [0; 32];
+                    let mut i: usize = 0;
+                    for spk_byte in spk_vec.iter() {
+                        spk_arr[i] = spk_vec[i];
+                        i += 1;
+                    }
+
+                    let mut j: usize = 0;
+                    let mut aa1_arr: [u8; 32] = [0; 32];
+                    for aa1_byte in aa1_vec.iter() {
+                        aa1_arr[j] = aa1_vec[j];
+                        j += 1;
+                    }
+
+                    let received_spk: PublicKey = PublicKey::from(spk_arr);
+                    assert_eq!(received_spk, self.spk);
+                    println!("spk assert passed");
+
+                    let mut arr = [0u8; 32];
+                    arr.copy_from_slice(&aa1_arr);
+                    let c = CompressedRistretto(arr);
+                    let re_aa1: RistrettoPoint = c.decompress().unwrap();
+                    // assert_eq!(re_aa1, aa1_r);
+                    // println!("aa1 assert passed");
+
+                    let mut cs_count: usize = 0;
+                    let mut re_cs_vec: Vec<Scalar> = Vec::new();
+                    
+                    loop {
+                        if (cs_count == num_cs.into()) {
+                            break;
+                        }
+                        let mut cur_arr: [u8; 32] = [0; 32];
+                        let mut cur_i: usize = 0;
+                        
+                        // let cs_vec: Vec<u8> = (&spki_trs_vec[cs_index..cs_index_end]).to_vec();
+
+                        let cs_vec_temp:Vec<u8> = (&cs_vec[cs_count*32..cs_count*32 + 32]).to_vec();
+                  
+                        for cs_byte in cs_vec_temp.iter() {
+                            cur_arr[cur_i] = cs_vec_temp[cur_i];
+                            cur_i += 1;
+                        }
+
+                        let cur_cs: Scalar =  Scalar::from_canonical_bytes(cur_arr).unwrap();
+                        re_cs_vec.push(cur_cs);
+
+                        cs_count += 1;
+                    }
+
+                    // assert_eq!(re_cs_vec, cs_r);
+                    // println!("cs assert passed");
+
+                    let mut zs_count: usize = 0;
+                    let mut re_zs_vec: Vec<Scalar> = Vec::new();
+                    
+                    loop {
+                        if (zs_count == num_zs.into()) {
+                            break;
+                        }
+                        let mut cur_arr: [u8; 32] = [0; 32];
+                        let mut cur_i: usize = 0;
+                        
+                        // let cs_vec: Vec<u8> = (&spki_trs_vec[cs_index..cs_index_end]).to_vec();
+
+                        let zs_vec_temp:Vec<u8> = (&zs_vec[zs_count*32..zs_count*32 + 32]).to_vec();
+                  
+                        for zs_byte in zs_vec_temp.iter() {
+                            cur_arr[cur_i] = zs_vec_temp[cur_i];
+                            cur_i += 1;
+                        }
+
+                        let cur_zs: Scalar =  Scalar::from_canonical_bytes(cur_arr).unwrap();
+                        re_zs_vec.push(cur_zs);
+
+                        zs_count += 1;
+                    }
+
+                    // assert_eq!(re_zs_vec, zs_r);
+                    // println!("zs assert passed");
+
+                    let re_trs: Signature = Signature{aa1: re_aa1, cs: re_cs_vec, zs: re_zs_vec};
+                    println!("re_spk process message: {:?}", received_spk);
+                    println!("re_trs process message: {:?}", re_trs);
+                    
+                    match self.signatures_set.get(&received_spk) {
+                        Some(_) => (),
+                        None=> {
+                            self.signatures_set.insert(received_spk.clone(), re_trs);
+                            println!("inserted new signature!");
+                        }
+                    }
+                
         }
 
        
@@ -259,12 +391,12 @@ impl Node {
 
                 },
                 Err(TryRecvError::Empty) => {
-                    if (self.parties_status.len() == 7) {
+                    if (self.parties_status.len() == NUM_PARTIES) {
                         println!("party status len is 1");
                         break;
                     }
                     // println!("No more msgs");
-                
+                    // break;
                 },
                 Err(TryRecvError::Disconnected) => {
                     println!("disconnected");
@@ -280,6 +412,41 @@ impl Node {
         
     }
 
+
+    fn process_received_trs(&mut self) { // TODO 3/31, create trs union set
+        println!("rx address in process: {:p}", &self.rx);
+        // let mut msg_received: Vec<String> = vec![];
+        loop {
+            // println!("loop");
+            match self.rx.try_recv() {
+                Ok(msg) => {
+                    println!("received from channel");
+                    // TODO process message here
+                    &self.process_message(msg.clone());
+                    // msg_received.push(msg);
+
+                },
+                Err(TryRecvError::Empty) => {
+                    if (self.signatures_set.len() == NUM_PARTIES) {
+                        // println!("party status len is 1");
+                        break;
+                    }
+                    // println!("No more msgs");
+                    // break;
+                },
+                Err(TryRecvError::Disconnected) => {
+                    println!("disconnected");
+                    break;
+                },
+                Err(e) => {
+                    println!("other error : {:?}", e);
+                    break;
+                }
+            }
+        }
+
+        
+    }
     // fn client_process(&self) {
     //     let mut msg_received: Vec<String> = vec![];
     //     loop {
@@ -303,6 +470,49 @@ impl Node {
     //         println!("client received message {:?}", m);
     //     }
     // }
+
+    pub fn create_trs_msg(&self, trs: Signature) -> Vec<u8> {
+        //msg_type, spki_len, aa1_len, cs_len, num_cs, zs_len, num_zs, is_anonymous, pki_vec, aa1_vec, cs_vec, zs_vec]
+
+
+        let mut ret: Vec<u8> = Vec::new();
+        ret.push(1);
+        let mut trs_aa1_vec: Vec<u8> = trs.aa1.compress().as_bytes().to_vec();
+        let mut spk_vec = self.spk.as_bytes().to_vec();
+        let spk_len: u8 = spk_vec.len() as u8;
+        ret.push(spk_len);
+        let aa1_len = trs_aa1_vec.len() as u8;
+        ret.push(aa1_len);
+        let mut cs_len: u8 = 0;
+        let mut zs_len: u8 = 0;
+        let mut cs_vec: Vec<u8> = Vec::new();
+        let mut zs_vec: Vec<u8> = Vec::new();
+        let mut num_cs: u8 = 0;
+        let mut num_zs: u8 = 0;
+
+        for cs_each in trs.cs.iter() {
+            cs_len += cs_each.to_bytes().to_vec().len() as u8;
+            cs_vec.append(&mut cs_each.to_bytes().to_vec());
+            num_cs += 1;
+        }
+        for zs_each in trs.zs.iter() {
+            zs_len += zs_each.to_bytes().to_vec().len() as u8;
+            zs_vec.append(&mut zs_each.as_bytes().to_vec());
+            num_zs += 1;
+        }
+        ret.push(cs_len);
+        ret.push(num_cs);
+        ret.push(zs_len);
+        ret.push(num_zs);
+        ret.push(1);
+        ret.append(&mut spk_vec);
+        ret.append(&mut trs_aa1_vec);
+        ret.append(&mut cs_vec);
+        ret.append(&mut zs_vec);
+        ret
+
+        //TODO 3/30 test if this convert correctly
+    }
 
     pub fn create_trs(&mut self) -> Signature{
         println!("creating trs");
@@ -333,6 +543,13 @@ impl Node {
         sign(&mut rng, &*msg_to_sign, &tag, &self.secret_key)
     }
 
+    pub fn multicast_trs(&mut self, trs_vec: Vec<u8>) {
+        for party in self.membership_list.iter() {
+            self.send_message(party.to_string(), trs_vec.clone());
+        }
+        // self.send_message(INTRODUCER_IP.to_string(), trs_vec.clone());
+    }
+
     pub fn start_honest(mut self) {
         // Hardcode membership list for now
         
@@ -350,7 +567,7 @@ impl Node {
                 &self.process_received();
                 println!("received done, len: {:?}", self.parties_status.len());
                 // if (self.parties_status.len() != self.membership_list.len()) {
-                if (self.parties_status.len() < 7) {
+                if (self.parties_status.len() < NUM_PARTIES) {
                     continue;
                 }
                 for (key, val) in self.parties_status.iter() {
@@ -362,18 +579,150 @@ impl Node {
                 println!("trs.aa1: {:?}", trs.aa1);
                 println!("trs.cs: {:?}", trs.cs);
                 println!("trs.zs: {:?}", trs.zs);
-                let mut trs_vec: Vec<u8> = Vec::new();
-                let mut trs_aa1_vec: Vec<u8> = trs.aa1.compress().as_bytes().to_vec();
-                trs_vec.append(&mut trs_aa1_vec);
-                for cs_each in trs.cs.iter() {
-                    trs_vec.append(&mut cs_each.to_bytes().to_vec());
-                }
-                for zs_each in trs.zs.iter() {
-                    trs_vec.append(&mut zs_each.to_bytes().to_vec());
-                }
 
-                println!("trs_vec: {:?}", trs_vec);
-                // [msg_type, spki_len, aa1_len, cs_len, zs_len, is_anonymous]
+                let aa1_r: RistrettoPoint = trs.aa1.clone();
+                let cs_r: Vec<Scalar> = trs.cs.clone();
+                let zs_r: Vec<Scalar> = trs.zs.clone();
+                let mut spki_trs_vec: Vec<u8> = self.create_trs_msg(trs);
+
+                // TODO: 3/31: send spki_trs_vec too all parties
+                &self.multicast_trs(spki_trs_vec.clone());
+                &self.process_received_trs(); // 
+
+
+                // let mut trs_vec: Vec<u8> = Vec::new();
+                // let mut trs_aa1_vec: Vec<u8> = trs.aa1.compress().as_bytes().to_vec();
+                // trs_vec.append(&mut trs_aa1_vec);
+                // for cs_each in trs.cs.iter() {
+                //     trs_vec.append(&mut cs_each.to_bytes().to_vec());
+                // }
+                // for zs_each in trs.zs.iter() {
+                //     trs_vec.append(&mut zs_each.to_bytes().to_vec());
+                // }
+
+                println!("trs_vec: {:?}", spki_trs_vec);
+
+                // if (spki_trs_vec[0] == 1) {
+                //     let spk_len: u8 = spki_trs_vec[1];
+                //     let aa1_len: u8 = spki_trs_vec[2];
+                //     let cs_len: u8 = spki_trs_vec[3];
+                //     let num_cs: u8 = spki_trs_vec[4];
+                //     let zs_len: u8 = spki_trs_vec[5];
+                //     let num_zs: u8 = spki_trs_vec[6];
+                //     let is_anonymous: u8 = spki_trs_vec[7];
+                //     let num_vec: u8 = cs_len / 7; // change num parties
+
+                //     let spk_index: usize = 8;
+                //     let spk_index_end: usize = (8 + spk_len).into();
+                //     let aa1_index: usize = spk_index_end;
+                //     let aa1_index_end: usize = (aa1_index as u8 + aa1_len).into();
+                //     let cs_index: usize = aa1_index_end;
+                //     let cs_index_end: usize = (cs_index as u8 + cs_len).into();
+                //     let zs_index: usize = cs_index_end;
+                //     let zs_index_end: usize = (zs_index as u8 + zs_len).into();
+
+                //     println!("spk_len: {:?}, spk_index : {:?}, spk_index_end: {:?}", spk_len, spk_index, spk_index_end);
+                //     println!("aa1_len: {:?}, aa1_index : {:?}, aa1_index_end: {:?}", aa1_len, aa1_index, aa1_index_end);
+                //     println!("cs_len: {:?}, num_cs: {:?}, cs_index : {:?}, cs_index_end: {:?}",cs_len, num_cs, cs_index, cs_index_end);
+                //     println!("zs_len: {:?}, num_zs: {:?}, zs_index : {:?}, zs_index_end: {:?}", zs_len, num_zs, zs_index, zs_index_end);
+
+                //     let spk_vec: Vec<u8> = (&spki_trs_vec[spk_index..spk_index_end]).to_vec();
+                //     println!("spk_vec len: {:?} spk_vec: {:?}", spk_vec.len(), spk_vec);
+                //     let aa1_vec: Vec<u8> = (&spki_trs_vec[aa1_index..aa1_index_end]).to_vec();
+                //     println!("aa1_vec len: {:?} aa1_vec: {:?}", aa1_vec.len(), aa1_vec);
+                //     let cs_vec: Vec<u8> = (&spki_trs_vec[cs_index..cs_index_end]).to_vec(); // 32 * num_parties
+                //     println!("cs_vec len: {:?} cs_vec: {:?}", cs_vec.len(), cs_vec);
+                //     let zs_vec: Vec<u8> = (&spki_trs_vec[zs_index..zs_index_end]).to_vec(); // 32 * num_parties
+
+                //     let mut spk_arr: [u8; 32] = [0; 32];
+                //     let mut i: usize = 0;
+                //     for spk_byte in spk_vec.iter() {
+                //         spk_arr[i] = spk_vec[i];
+                //         i += 1;
+                //     }
+
+                //     let mut j: usize = 0;
+                //     let mut aa1_arr: [u8; 32] = [0; 32];
+                //     for aa1_byte in aa1_vec.iter() {
+                //         aa1_arr[j] = aa1_vec[j];
+                //         j += 1;
+                //     }
+
+                //     let received_spk: PublicKey = PublicKey::from(spk_arr);
+                //     assert_eq!(received_spk, self.spk);
+                //     println!("spk assert passed");
+
+                //     let mut arr = [0u8; 32];
+                //     arr.copy_from_slice(&aa1_arr);
+                //     let c = CompressedRistretto(arr);
+                //     let re_aa1: RistrettoPoint = c.decompress().unwrap();
+                //     assert_eq!(re_aa1, aa1_r);
+                //     println!("aa1 assert passed");
+
+                //     let mut cs_count: usize = 0;
+                //     let mut re_cs_vec: Vec<Scalar> = Vec::new();
+                    
+                //     loop {
+                //         if (cs_count == num_cs.into()) {
+                //             break;
+                //         }
+                //         let mut cur_arr: [u8; 32] = [0; 32];
+                //         let mut cur_i: usize = 0;
+                        
+                //         // let cs_vec: Vec<u8> = (&spki_trs_vec[cs_index..cs_index_end]).to_vec();
+
+                //         let cs_vec_temp:Vec<u8> = (&cs_vec[cs_count*32..cs_count*32 + 32]).to_vec();
+                  
+                //         for cs_byte in cs_vec_temp.iter() {
+                //             cur_arr[cur_i] = cs_vec_temp[cur_i];
+                //             cur_i += 1;
+                //         }
+
+                //         let cur_cs: Scalar =  Scalar::from_canonical_bytes(cur_arr).unwrap();
+                //         re_cs_vec.push(cur_cs);
+
+                //         cs_count += 1;
+                //     }
+
+                //     assert_eq!(re_cs_vec, cs_r);
+                //     println!("cs assert passed");
+
+                //     let mut zs_count: usize = 0;
+                //     let mut re_zs_vec: Vec<Scalar> = Vec::new();
+                    
+                //     loop {
+                //         if (zs_count == num_zs.into()) {
+                //             break;
+                //         }
+                //         let mut cur_arr: [u8; 32] = [0; 32];
+                //         let mut cur_i: usize = 0;
+                        
+                //         // let cs_vec: Vec<u8> = (&spki_trs_vec[cs_index..cs_index_end]).to_vec();
+
+                //         let zs_vec_temp:Vec<u8> = (&zs_vec[zs_count*32..zs_count*32 + 32]).to_vec();
+                  
+                //         for zs_byte in zs_vec_temp.iter() {
+                //             cur_arr[cur_i] = zs_vec_temp[cur_i];
+                //             cur_i += 1;
+                //         }
+
+                //         let cur_zs: Scalar =  Scalar::from_canonical_bytes(cur_arr).unwrap();
+                //         re_zs_vec.push(cur_zs);
+
+                //         zs_count += 1;
+                //     }
+
+                //     assert_eq!(re_zs_vec, zs_r);
+                //     println!("zs assert passed");
+
+                //     let re_trs: Signature = Signature{aa1: re_aa1, cs: re_cs_vec, zs: re_zs_vec};
+                
+                // }
+
+                
+
+
+                // [msg_type, spki_len, aa1_len, cs_len, num_cs, zs_len, num_zs, is_anonymous, pki_vec, aa1_vec, cs_vec, zs_vec]
 
 
                 // let trs_cs_vec: Vec<u8> = trs.cs.to_bytes();
@@ -658,7 +1007,7 @@ pub fn server_thread_create(tx: std::sync::mpsc::Sender<Vec<u8>> ) {
                 // msg_to_process.push_str(&src_addr.to_string());
                 // tx.send(msg_to_process.to_string()).expect("failed to send msg to rx");
 
-
+                println!("result vec in server thread: {:?}", result);
                 tx.send(result).expect("failed to send msg to rx");
                 println!("pushed received message to the channel");
             }, 
