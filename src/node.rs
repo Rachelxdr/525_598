@@ -353,7 +353,7 @@ impl Node {
         } else if (msg_type == 2) {
             if (!self.signature_byte_set.contains(&msg)) {
                 msg[0] = 2;
-                self.signature_byte_set.insert(msg.clone());
+                // self.signature_byte_set.insert(msg.clone());
             
 
                 println!("decodeing NEW signatures");
