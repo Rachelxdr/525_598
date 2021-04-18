@@ -24,25 +24,27 @@ mod sig;
 // const channel = mpsc::channel::<String>();
 
 fn main() {
-    // let bt = Backtrace::new();
-    
+   
+    // Create Communication channel between threads  
     let(tx, rx) = mpsc::channel();
-    println!("rx address in main: {:p}", &rx);
-    println!("tx address in main: {:p}", &tx);
+    
+    // Create new party
     let mut test_node = Node::new(rx);
+
+    // Create Server thread to receive message
     let server_thread = thread::spawn(move || {
         node::server_thread_create(tx);
-        // &test_node.server_thread_create();
     });
-    //TODO move server thread to the node struct
 
 
+    // Getting node's role from input
     println!("Please enter a role: H (honest) / B (Byzantine)");
     let mut buff = String::new();
     loop {
         io::stdin().read_line(&mut buff).expect("reading from stdin failed");
         println!("buff: [{}]", buff);
         if buff == "H\n".to_string(){
+            //Starting a honest party
             test_node.start_honest();
             break;
         } else {
