@@ -1151,7 +1151,17 @@ pub fn server_thread_create(tx: std::sync::mpsc::Sender<Vec<u8>> ) {
                 result.append(&mut addr_vec);
 
                 // Send received message to client thread for process through the channel
-                tx.send(result).expect("failed to send msg to rx");
+                // tx.send(result).expect("failed to send msg to rx");
+                match tx.send(result) {
+                    Ok(r) => {
+                        println!("Server thread send successfully!");
+                    }
+                    Err(e) => {
+                        println!("Server thread send error, client stop receiving!");
+                        break;
+                    }
+                }
+                
                 println!("pushed received message to the channel");
             }, 
             Err(ref err) if err.kind() == ErrorKind::WouldBlock => (),
