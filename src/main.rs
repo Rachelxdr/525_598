@@ -11,6 +11,7 @@ use std::sync::mpsc::{self, TryRecvError};
 mod key;
 mod prelude;
 mod sig;
+mod trace;
 
 
 // use std::backtrace::Backtrace;

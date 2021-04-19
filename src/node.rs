@@ -37,6 +37,7 @@ use crate::{
     key::{gen_keypair, PrivateKey, PublicKey as Trace_key},
     prelude::*,
     sig::{compute_sigma, Signature, Tag, sign, verify},
+    trace::{Trace, trace},
 };
 
 // use crate::{
@@ -793,10 +794,19 @@ impl Node {
     pub fn verify_trs(&mut self) {
         for (spk_map, sig) in self.signatures_set.iter() {
             let msg_to_verify = spk_map.as_bytes();
-            if (!verify(&*msg_to_verify, &self.trs_tag, &sig)) {
-                println!("faked message!"); 
-            } else {
-                println!("real message!");
+            // if (!verify(&*msg_to_verify, &self.trs_tag, &sig)) {
+            //     println!("faked message!"); 
+            // } else {
+                
+            //     println!("real message!");
+            // }
+            for (spk_map_a, sig_a) in self.signatures_set.iter() {
+                let msg_to_verify_a = spk_map_a.as_bytes();
+                if(!(Trace::Indep == trace(&*msg_to_verify, &sig, &*msg_to_verify_a, &sig_a, &self.trs_tag))) {
+                    println!("double sign");
+                } else {
+                    println!("valid sign");
+                }
             }
         }
     }
@@ -947,7 +957,8 @@ impl Node {
             //     sspksi = {(spki, trsi)} (i = 0-n) (Signed Shadowed public key set at i)
             // 5. Send sspksi to all others (dolev strong)
             // 6. take the union of all received sets (sspksu)(Signed Shadowed public key set union)
-            // 7. run va = ver(spka, trsa) (using pka to verify the authenticity) for all pair and remove parties (spka, trsa) whose va != 1
+            // 7. run va = ver(spka, trsa) (using pka to verify the authenticity) 
+            //    for all pair and remove parties (spka, trsa) whose va != 1
             // 8. t_ab = trace(L, (spka, trsa), (spkb, trsb)) for all pairs in the union and remove sspka and sspkb for those t_ab != "indep" and spka != spkb.
             //     After this step we get a master signed shadow public key set msspks
             // 9. output anonymout PKI{spki | (spki, trsi) is party of msspks} 
