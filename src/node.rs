@@ -36,7 +36,7 @@ use sha2::Sha512;
 use crate::{
     key::{gen_keypair, PrivateKey, PublicKey as Trace_key},
     prelude::*,
-    sig::{compute_sigma, Signature, Tag, sign},
+    sig::{compute_sigma, Signature, Tag, sign, verify},
 };
 
 // use crate::{
@@ -790,11 +790,16 @@ impl Node {
     }
 
     // Function to verify the authenicity or TRS and remove the anonymous pk and trs if not authentic
-    // pub fn verify_trs() {
-    //     for (spk, sig) in self.signatures_set.iter() {
-
-    //     }
-    // }
+    pub fn verify_trs(&mut self) {
+        for (spk_map, sig) in self.signatures_set.iter() {
+            let msg_to_verify = spk_map.as_bytes();
+            if (!verify(&*msg_to_verify, &self.trs_tag, &sig)) {
+                println!("faked message!"); 
+            } else {
+                println!("real message!");
+            }
+        }
+    }
 
     // 
     pub fn create_trs(&mut self) -> Signature{
@@ -901,7 +906,7 @@ impl Node {
 
 
                 // Verify the autheniticity of received TRS
-                // &self.verify_trs();
+                &self.verify_trs();
 
                 println!("YAY");
 
