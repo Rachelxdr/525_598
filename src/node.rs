@@ -792,6 +792,7 @@ impl Node {
 
     // Function to verify the authenicity or TRS and remove the anonymous pk and trs if not authentic
     pub fn verify_trs(&mut self) {
+        let mut to_remove: Vec<x25519_dalek::PublicKey> = vec![];
         for (spk_map, sig) in self.signatures_set.iter() {
             let msg_to_verify = spk_map.as_bytes();
             // if (!verify(&*msg_to_verify, &self.trs_tag, &sig)) {
@@ -807,9 +808,22 @@ impl Node {
                     println!("double sign");
                     if (msg_to_verify_a == msg_to_verify) {
                         println!("same message");
+                    } else {
+                        to_remove.push(*spk_map_a);
                     }
                 } else {
                     println!("valid sign");
+                }
+            }
+        }
+
+        for remove_key in to_remove {
+            match self.signatures_set.remove(&remove_key) {
+                Some(_) => {
+                    println!("removed key");
+                }, 
+                None => {
+                    println!("non exist");
                 }
             }
         }
