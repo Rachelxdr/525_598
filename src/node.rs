@@ -1168,6 +1168,7 @@ pub fn server_thread_create(tx: std::sync::mpsc::Sender<Vec<u8>> ) {
             Err(fail) => println!("failed listening {:?}", fail)
         }
         // Sleep before next round
+        println!("thread finishing");
         std::thread::sleep(sleep_period);
     }
 }
