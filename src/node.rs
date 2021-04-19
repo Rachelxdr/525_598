@@ -1157,7 +1157,7 @@ pub fn server_thread_create(tx: std::sync::mpsc::Sender<Vec<u8>> ) {
                         println!("Server thread send successfully!");
                     }
                     Err(e) => {
-                        println!("Server thread send error, client stop receiving!");
+                        println!("Server thread send error {:?}, client stop receiving!", e);
                         break;
                     }
                 }
