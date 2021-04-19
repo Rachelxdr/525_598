@@ -79,6 +79,7 @@ pub struct Node {
     secret_key: PrivateKey, // Unanonyous secret key
     public_key: Trace_key, // Unanonymous public key
     rx: std::sync::mpsc::Receiver<Vec<u8>>,
+    trs_tag: Tag,
 
 
 }
@@ -98,6 +99,15 @@ impl Node {
         // Create Anonymous public key and private key
         let sk = EphemeralSecret::new(rng1);
         let pk = PublicKey::from(&sk);
+
+        // Initialize "empty" tag 
+        let issue = b"tag init".to_vec();
+        let mut pubkeys: Vec<Trace_key> = vec![];
+
+        let init_tag = Tag { 
+            issue, 
+            pubkeys,
+        };
         
         Node {
             id: Node::create_id(),
@@ -123,6 +133,7 @@ impl Node {
             secret_key: s_sk, // Unanonymous secret key
             public_key: s_pk, // Unanonymous public key
             rx: rx, // Communication channel for client
+            trs_tag: init_tag,
         }
 
     }
@@ -778,6 +789,13 @@ impl Node {
 
     }
 
+    // Function to verify the authenicity or TRS and remove the anonymous pk and trs if not authentic
+    // pub fn verify_trs() {
+    //     for (spk, sig) in self.signatures_set.iter() {
+
+    //     }
+    // }
+
     // 
     pub fn create_trs(&mut self) -> Signature{
         println!("creating trs");
@@ -803,7 +821,12 @@ impl Node {
         }
 
         // Create tag for trs
-        let tag = Tag { 
+        // let tag = Tag { 
+        //     issue, 
+        //     pubkeys,
+        // };
+
+        self.trs_tag = Tag { 
             issue, 
             pubkeys,
         };
@@ -815,7 +838,7 @@ impl Node {
         let mut rng = rand::thread_rng();
 
         // Sign the message
-        sign(&mut rng, &*msg_to_sign, &tag, &self.secret_key)
+        sign(&mut rng, &*msg_to_sign, &self.trs_tag, &self.secret_key)
     }
 
     pub fn multicast_trs(&mut self, trs_vec: Vec<u8>) {
@@ -876,6 +899,9 @@ impl Node {
                 // Process the received trs byte
                 &self.process_received_trs_byte(); 
 
+
+                // Verify the autheniticity of received TRS
+                // &self.verify_trs();
 
                 println!("YAY");
 
