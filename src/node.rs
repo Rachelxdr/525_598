@@ -603,7 +603,7 @@ impl Node {
                 },
                 Err(TryRecvError::Empty) => {
                     //TODO 3/31 evening: set the threshold right
-                    if (self.signatures_set.len() == NUM_PARTIES && num_empty >= self.membership_list.len() * self.membership_list.len() * self.signature_byte_set.len()) {
+                    if (self.signatures_set.len() == NUM_PARTIES + 1 && num_empty >= self.membership_list.len() * self.membership_list.len() * self.signature_byte_set.len()) {
                         println!("process_received_trs_byte full");
                         break;
                     }
@@ -920,8 +920,9 @@ impl Node {
     pub fn multicast_trs_diff(&mut self, trs_vec: Vec<u8>, trs_vec_diff: Vec<u8>) {
         // Iterate through membership list and send trs message to all parties
         // let r = 0;
+        let mut r = 1;
         for party in self.membership_list.iter() {
-            let mut r = 1;
+
             if (r % 2 == 0) {
                 println!("sending trs1");
                 self.send_message(party.to_string(), trs_vec.clone());
