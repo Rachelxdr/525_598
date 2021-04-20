@@ -923,8 +923,10 @@ impl Node {
         for party in self.membership_list.iter() {
             let mut r = 1;
             if (r % 2 == 0) {
+                println!("sending trs1");
                 self.send_message(party.to_string(), trs_vec.clone());
             } else{
+                println!("sending trs2");
                 self.send_message(party.to_string(), trs_vec_diff.clone());
             }
             r = r + 1;
