@@ -907,17 +907,20 @@ impl Node {
             // }
             for (spk_map_a, sig_a) in self.signatures_set.iter() {
                 let msg_to_verify_a = spk_map_a.as_bytes();
-                if(!(Trace::Indep == trace(&*msg_to_verify, &sig, &*msg_to_verify_a, &sig_a, &self.trs_tag))) {
+                if((Trace::Linked == trace(&*msg_to_verify, &sig, &*msg_to_verify_a, &sig_a, &self.trs_tag))) {
                     
-                    println!("double sign");
-                    if (msg_to_verify_a == msg_to_verify) {
-                        println!("same message");
-                    } else {
-                        println!("removing invalid sign");
-                        to_remove.push(*spk_map_a);
-                    }
-                } else {
+                    println!("linked");
+                    // if (spk_map == spk_map_a) {
+                    //     println!("same message");
+                    // } else {
+                    //     println!("removing invalid sign");
+                    //     to_remove.push(*spk_map_a);
+                    // }
+                } else if ((Trace::Indep == trace(&*msg_to_verify, &sig, &*msg_to_verify_a, &sig_a, &self.trs_tag))) {
                     println!("valid sign");
+                    
+                }else {
+                    println!("revealed");
                 }
             }
         }
