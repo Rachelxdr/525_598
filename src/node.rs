@@ -603,7 +603,7 @@ impl Node {
                 },
                 Err(TryRecvError::Empty) => {
                     //TODO 3/31 evening: set the threshold right
-                    if (self.signatures_set.len() == NUM_PARTIES && num_empty >= self.membership_list.len() * self.membership_list.len() * self.signature_byte_set.len()) {
+                    if (self.signatures_set.len() == NUM_PARTIES + 1 && num_empty >= self.membership_list.len() * self.membership_list.len() * self.signature_byte_set.len()) {
                         println!("process_received_trs_byte full");
                         break;
                     }
@@ -790,6 +790,110 @@ impl Node {
 
     }
 
+    pub fn create_trs_msg_diff(&self, trs: Signature, pk_diff: PublicKey) -> Vec<u8> {
+        // Vector format
+        // [msg_type, spki_len, aa1_len, cs_len, num_cs, zs_len, num_zs, is_anonymous, pki_vec, aa1_vec, cs_vec, zs_vec]
+
+        // TRS struct:
+        // pub struct Signature {
+        //     pub aa1: RistrettoPoint,
+        //     pub cs: Vec<Scalar>,
+        //     pub zs: Vec<Scalar>,
+        // }
+
+        // Initialize empty vector
+        let mut ret: Vec<u8> = Vec::new();
+        // Push message type
+        ret.push(1);
+
+        // Create party's anonymous public key vector
+        let mut spk_vec = pk_diff.as_bytes().to_vec();
+
+        // Calculate party's anonymous public key vector length
+        let spk_len: u8 = spk_vec.len() as u8;
+
+        // Add party's anonymous public key length to vector
+        ret.push(spk_len);
+
+        // Create aa1 bytee vector
+        let mut trs_aa1_vec: Vec<u8> = trs.aa1.compress().as_bytes().to_vec();
+
+        // Calculate party's TRS aa1 length
+        let aa1_len = trs_aa1_vec.len() as u8;
+
+        // Add party's TRS aa1 length to vector
+        ret.push(aa1_len);
+
+        // Initialize TRS cs and zs length values
+        let mut cs_len: u8 = 0;
+        let mut zs_len: u8 = 0;
+
+        // Initialize TRS cs and zs vectors
+        let mut cs_vec: Vec<u8> = Vec::new();
+        let mut zs_vec: Vec<u8> = Vec::new();
+
+        // Counter used to keep track of how many vectors are contained in TRS cs and zs
+        let mut num_cs: u8 = 0;
+        let mut num_zs: u8 = 0;
+        
+        // Loop to iterate each Scalar vector of party TRS cs
+        for cs_each in trs.cs.iter() {
+            
+            // Put current cs Scalar vector into bytes and accumulate the length
+            cs_len += cs_each.to_bytes().to_vec().len() as u8;
+
+            // Put current cs Scalar vector into bytes and append to cs vector for final message
+            cs_vec.append(&mut cs_each.to_bytes().to_vec());
+
+            // Increase number of cs scalar vector counter
+            num_cs += 1;
+        }
+
+        // Loop to iterate each Scalar vector of party TRS zs
+        for zs_each in trs.zs.iter() {
+
+            // Put current zs Scalar vector into bytes and accumulate the length
+            zs_len += zs_each.to_bytes().to_vec().len() as u8;
+
+            // Put current zs Scalar vector into bytes and append to zs vector of final message
+            zs_vec.append(&mut zs_each.as_bytes().to_vec());
+
+            // Increase number of zs Scalar vector counter
+            num_zs += 1;
+        }
+
+        // Push total length of cs final vector to the trs message vector
+        ret.push(cs_len);
+
+        // Push number of cs Scalar vector to the trs message vector
+        ret.push(num_cs);
+
+        // Push total length of zs final vector to the trs message vector
+        ret.push(zs_len);
+
+        // Push number of zs Scalar vector to the trs message vector
+        ret.push(num_zs);
+
+        // Vector is anonymous so push 1 for is_anonymous variable
+        ret.push(1);
+
+        // Append party's anonymous public key vector to the trs message vector
+        ret.append(&mut spk_vec);
+
+        // Append party's TRS aa1 vector to the trs message vector
+        ret.append(&mut trs_aa1_vec);
+
+        // Append party's TRS cs vector to the trs message vector
+        ret.append(&mut cs_vec);
+
+        // Append party's TRS zs vector to the trs message vector
+        ret.append(&mut zs_vec);
+
+        // Return the final trs message
+        ret
+
+    }
+
     // Function to verify the authenicity or TRS and remove the anonymous pk and trs if not authentic
     pub fn verify_trs(&mut self) {
         let mut to_remove: Vec<x25519_dalek::PublicKey> = vec![];
@@ -868,7 +972,7 @@ impl Node {
         sign(&mut rng, &*msg_to_sign, &self.trs_tag, &self.secret_key)
     }
 
-    pub fn create_trs_diff(&mut self) -> Signature{
+    pub fn create_trs_diff(&mut self, pk_diff: PublicKey) -> Signature{
         println!("creating trs");
 
         // Create issue for TRS' tag
@@ -895,9 +999,9 @@ impl Node {
             pubkeys,
         };
 
-        let mut rng1 = OsRng;
-        let sk_diff = EphemeralSecret::new(rng1);
-        let pk_diff = PublicKey::from(&sk_diff);
+        // let mut rng1 = OsRng;
+        // let sk_diff = EphemeralSecret::new(rng1);
+        // let pk_diff = PublicKey::from(&sk_diff);
         // Put party's anonymous public key into byte as message to sign
         let msg_to_sign = pk_diff.as_bytes();
 
@@ -967,7 +1071,7 @@ impl Node {
 
             // Create traceable Signature ring
             let trs: Signature = self.create_trs();
-            let trs_multi:Signature = self.create_trs_diff();
+            
 
             let aa1_r: RistrettoPoint = trs.aa1.clone();
             let cs_r: Vec<Scalar> = trs.cs.clone();
@@ -975,7 +1079,15 @@ impl Node {
 
             // Create Trs message to send to other parties
             let mut spki_trs_vec: Vec<u8> = self.create_trs_msg(trs);
-            let mut spki_trs_vec_diff: Vec<u8> = self.create_trs_msg(trs_multi);
+
+            //Create second trs
+            let mut rng1 = OsRng;
+            let sk_diff = EphemeralSecret::new(rng1);
+            let pk_diff = PublicKey::from(&sk_diff);
+            let trs_multi:Signature = self.create_trs_diff(pk_diff);
+            let mut spki_trs_vec_diff: Vec<u8> = self.create_trs_msg_diff(trs_multi, pk_diff);
+
+            println!("created different trs vec");
             // Send trs message vector to all other parties
             &self.multicast_trs_diff(spki_trs_vec.clone(), spki_trs_vec_diff.clone());
             
