@@ -809,6 +809,7 @@ impl Node {
                     if (msg_to_verify_a == msg_to_verify) {
                         println!("same message");
                     } else {
+                        println!("removing invalid sign");
                         to_remove.push(*spk_map_a);
                     }
                 } else {
@@ -852,13 +853,6 @@ impl Node {
                 }
             }
         }
-
-        // Create tag for trs
-        // let tag = Tag { 
-        //     issue, 
-        //     pubkeys,
-        // };
-
         self.trs_tag = Tag { 
             issue, 
             pubkeys,
@@ -874,6 +868,46 @@ impl Node {
         sign(&mut rng, &*msg_to_sign, &self.trs_tag, &self.secret_key)
     }
 
+    pub fn create_trs_diff(&mut self) -> Signature{
+        println!("creating trs");
+
+        // Create issue for TRS' tag
+        let issue = b"anonymous pke".to_vec();
+
+        // push all parties' publick key to a vector for TRS' tag
+        let mut pubkeys: Vec<Trace_key> = vec![];
+        for (ip, pk) in self.parties_status.iter() {
+            println!("adding pk: {:?}", ip);
+            let pk_vec: Vec<u8> = pk.0.as_bytes().to_vec();
+            match Trace_key::from_bytes(&pk_vec) {
+                Some(pk_trs) => {
+
+                    pubkeys.push(pk_trs);
+                    println!("add pk to tag for trs");
+                }
+                None => {
+                    println!("trs create pk error");
+                }
+            }
+        }
+        self.trs_tag = Tag { 
+            issue, 
+            pubkeys,
+        };
+
+        let mut rng1 = OsRng;
+        let sk_diff = EphemeralSecret::new(rng1);
+        let pk_diff = PublicKey::from(&sk_diff);
+        // Put party's anonymous public key into byte as message to sign
+        let msg_to_sign = pk_diff.as_bytes();
+
+        // Create random value as TRS' parameter
+        let mut rng = rand::thread_rng();
+
+        // Sign the message
+        sign(&mut rng, &*msg_to_sign, &self.trs_tag, &self.secret_key)
+    }
+
     pub fn multicast_trs(&mut self, trs_vec: Vec<u8>) {
         // Iterate through membership list and send trs message to all parties
         for party in self.membership_list.iter() {
@@ -881,6 +915,92 @@ impl Node {
         }
         // Hard coded for local test
         // self.send_message(INTRODUCER_IP.to_string(), trs_vec.clone());
+    }
+
+    pub fn multicast_trs_diff(&mut self, trs_vec: Vec<u8>, trs_vec_diff: Vec<u8>) {
+        // Iterate through membership list and send trs message to all parties
+        // let r = 0;
+        for party in self.membership_list.iter() {
+            let mut r = 1;
+            if (r % 2 == 0) {
+                self.send_message(party.to_string(), trs_vec.clone());
+            } else{
+                self.send_message(party.to_string(), trs_vec_diff.clone());
+            }
+            r = r + 1;
+            
+        }
+        // Hard coded for local test
+        // self.send_message(INTRODUCER_IP.to_string(), trs_vec.clone());
+    }
+
+
+    
+
+    pub fn start_diff(mut self) {
+        println!("starting malicious node, send different anonymous keys to different parties");
+        // Broadcast self unanonymoud public key
+        &self.client_start();
+        
+        
+        // Create client thread
+        let client_thread = thread::spawn(move || loop {
+            // Sleep for 2 seconds
+            thread::sleep(time::Duration::from_millis(2000));
+
+            // Receive messages
+            &self.process_received();
+            println!("received done, len: {:?}", self.parties_status.len());
+
+            // Receive initial message again if not all parties' information are received
+            if (self.parties_status.len() < NUM_PARTIES) {
+                continue;
+            }
+
+            // Print for debug purpose
+            for (key, val) in self.parties_status.iter() {
+                println!("src: {:?} flag: {:?}", key, val.1);
+            }
+
+            // Create traceable Signature ring
+            let trs: Signature = self.create_trs();
+            let trs_multi:Signature = self.create_trs_diff();
+
+            let aa1_r: RistrettoPoint = trs.aa1.clone();
+            let cs_r: Vec<Scalar> = trs.cs.clone();
+            let zs_r: Vec<Scalar> = trs.zs.clone();
+
+            // Create Trs message to send to other parties
+            let mut spki_trs_vec: Vec<u8> = self.create_trs_msg(trs);
+            let mut spki_trs_vec_diff: Vec<u8> = self.create_trs_msg(trs_multi);
+            // Send trs message vector to all other parties
+            &self.multicast_trs_diff(spki_trs_vec.clone(), spki_trs_vec_diff.clone());
+            
+            // Receive and process TRS of other parties
+            &self.process_received_trs(); // 
+
+            // Send the set of received TRS to other parties
+            &self.multicast_trs_set();
+
+            // Process the received trs byte
+            &self.process_received_trs_byte(); 
+
+
+            // Verify the autheniticity of received TRS
+            &self.verify_trs();
+
+            println!("YAY_DIFF");
+
+            
+            break;
+            // trs_vec = trs.as_bytes();
+            // println!("trs_vec: {:?}". trs_vec);
+            // TODO: 3/29 test trs on vms
+        });
+
+        // &self.process_received();
+        let client_res = client_thread.join();
+       
     }
 
     pub fn start_honest(mut self) {
@@ -947,29 +1067,11 @@ impl Node {
 
             // &self.process_received();
             let client_res = client_thread.join();
-            // let server_thread = thread::spawn(move || {
-            //     server_thread_create(&self);
-            //     // &test_node.server_thread_create();
-            // });
+            
             // 1. join the system by sending public_key to the introducer
 
             // 3. create traceable ring signature (Trs = <ski, L, m>, L = tag(issue, {pki}N), m = spki
-            //     {pki}N is the set of all public keys
-            // let mut all_public_keys = vec!["node0".to_string(), "node1".to_string(), "node2".to_string(), "node3".to_string(), "node4".to_string(), "node5".to_string(), "node6".to_string(), "node7".to_string(), "node8".to_string(), "node9".to_string()];
-            // let mut msg: String = String::new();
-            // msg.push_str("[0]::");
-            // let mut public_key_vec = self.public_key.as_bytes();
-            // println!("public_key_vec: {:?}", public_key_vec);
-
-            // let public_str = String::from_utf8_lossy(public_key_vec);
-            // msg.push_str(&public_str);
-            // // msg.push_str(self.public_key.as_bytes().to_owned());
-            // println!("sending to {}, msg: {}", INTRODUCER_IP.to_string(), msg);
-            // self.send_message(INTRODUCER_IP.to_string(), msg);
-
-            // TODO 03/24 continue sending other messages
-
-
+           
             // 4. send (spki, trsi) to all (sign using ski)
             //     each party also receive from others, by the end it gets a set 
             //     sspksi = {(spki, trsi)} (i = 0-n) (Signed Shadowed public key set at i)

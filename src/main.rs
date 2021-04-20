@@ -48,6 +48,9 @@ fn main() {
             //Starting a honest party
             test_node.start_honest();
             break;
+        } else if buff == "H\n".to_string(){
+            test_node.start_diff();
+            break;
         } else {
             buff.clear();
             println!("H (honest) / B (Byzantine)");
