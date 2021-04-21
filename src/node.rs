@@ -962,6 +962,17 @@ impl Node {
         let mut pubkeys: Vec<Trace_key> = vec![];
         // for (ip, pk) in self.parties_status.iter() {
         for ip_addr in self.membership_list.iter(){
+            println!("ipaddr: {:?}", ip_addr.clone());
+        }
+
+
+        for (ip, pk) in self.parties_status.iter(){
+            println!("ipaddr: {:?}", ip.clone());
+        }
+
+
+
+        for ip_addr in self.membership_list.iter(){
             // println!("adding pk: {:?}", ip);
             match self.parties_status.get(&ip_addr.clone()) {
                 Some(pk) => {
