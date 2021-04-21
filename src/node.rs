@@ -76,7 +76,8 @@ pub struct Node {
     // secret_key: fujisaki_ringsig::PrivateKey,
     // public_key: fujisaki_ringsig::PublicKey,
     signature_byte_set: HashSet<Vec<u8>>, // TRS message vector set to get the union of all TRS
-    signatures_set: HashMap<x25519_dalek::PublicKey, Signature>, // Map anonymous public key to TRS
+    // signatures_set: HashMap<x25519_dalek::PublicKey, Signature>, // Map anonymous public key to TRS
+    signatures_set: HashMap<Vec<u8>, Signature>,
     secret_key: PrivateKey, // Unanonyous secret key
     public_key: Trace_key, // Unanonymous public key
     rx: std::sync::mpsc::Receiver<Vec<u8>>,
@@ -270,15 +271,15 @@ impl Node {
             let zs_vec: Vec<u8> = (&msg[zs_index..zs_index_end]).to_vec(); // 32 * num_parties
 
             // Convert anonymous public key vector into array
-            let mut spk_arr: [u8; 32] = [0; 32];
-            let mut i: usize = 0;
-            for spk_byte in spk_vec.iter() {
-                spk_arr[i] = spk_vec[i];
-                i += 1;
-            }
+            // let mut spk_arr: [u8; 32] = [0; 32];
+            // let mut i: usize = 0;
+            // for spk_byte in spk_vec.iter() {
+            //     spk_arr[i] = spk_vec[i];
+            //     i += 1;
+            // }
 
-            // Recreate the anonymous public key
-            let received_spk: PublicKey = PublicKey::from(spk_arr);
+            // // Recreate the anonymous public key
+            // let received_spk: PublicKey = PublicKey::from(spk_arr);
 
             // Convert TRS aa1 vector into array
             let mut j: usize = 0;
@@ -357,10 +358,12 @@ impl Node {
             let re_trs: Signature = Signature{aa1: re_aa1, cs: re_cs_vec, zs: re_zs_vec};
             
             
-            match self.signatures_set.get(&received_spk) {
+            // match self.signatures_set.get(&received_spk) {
+            match self.signatures_set.get(&spk_vec) {    
                 Some(_) => (),
                 None=> {
-                    self.signatures_set.insert(received_spk.clone(), re_trs);
+                    // self.signatures_set.insert(received_spk.clone(), re_trs);
+                    self.signatures_set.insert(spk_vec.clone(), re_trs);
                     println!("inserted new signature!");
                 }
             }
@@ -491,14 +494,18 @@ impl Node {
                 
                 // if (!self.signature_byte_set.contains())
 
-                match self.signatures_set.get(&received_spk) {
+                // match self.signatures_set.get(&received_spk) {
+                match self.signatures_set.get(&spk_vec) {
                     Some(_) => {
                         println!("NEW decode, NOthing to the map!");
                     },
                     None=> {
-                        self.signatures_set.insert(received_spk.clone(), re_trs);
+                        // self.signatures_set.insert(received_spk.clone(), re_trs);
+                        self.signatures_set.insert(spk_vec.clone(), re_trs);
+                        
                         println!("inserted new signature FROM SET!");
                     }
+
                 }
             }
                 
@@ -897,9 +904,10 @@ impl Node {
 
     // Function to verify the authenicity or TRS and remove the anonymous pk and trs if not authentic
     pub fn verify_trs(&mut self) {
-        let mut to_remove: Vec<x25519_dalek::PublicKey> = vec![];
+        // let mut to_remove: Vec<x25519_dalek::PublicKey> = vec![];
+        let mut to_remove: Vec<Vec<u8>> = vec![];
         for (spk_map, sig) in self.signatures_set.iter() {
-            let msg_to_verify = spk_map.as_bytes();
+            // let msg_to_verify = spk_map.as_bytes();
             // if (!verify(&*msg_to_verify, &self.trs_tag, &sig)) {
             //     println!("faked message!"); 
             // } else {
@@ -907,9 +915,10 @@ impl Node {
             //     println!("real message!");
             // }
             for (spk_map_a, sig_a) in self.signatures_set.iter() {
-                let msg_to_verify_a = spk_map_a.as_bytes();
-                if((Trace::Linked == trace(&*msg_to_verify, &sig, &*msg_to_verify_a, &sig_a, &self.trs_tag))) {
-                    
+                // let msg_to_verify_a = spk_map_a.as_bytes();
+                // if((Trace::Linked == trace(&*msg_to_verify, &sig, &*msg_to_verify_a, &sig_a, &self.trs_tag))) {
+                if((Trace::Linked == trace(&*spk_map, &sig, &*spk_map_a, &sig_a, &self.trs_tag))) {
+                   
                     println!("linked");
                     // if (spk_map == spk_map_a) {
                     //     println!("same message");
@@ -917,7 +926,9 @@ impl Node {
                     //     println!("removing invalid sign");
                     //     to_remove.push(*spk_map_a);
                     // }
-                } else if ((Trace::Indep == trace(&*msg_to_verify, &sig, &*msg_to_verify_a, &sig_a, &self.trs_tag))) {
+                // } else if ((Trace::Indep == trace(&*msg_to_verify, &sig, &*msg_to_verify_a, &sig_a, &self.trs_tag))) {
+                } else if ((Trace::Indep == trace(&*spk_map, &sig, &*spk_map_a, &sig_a, &self.trs_tag))) {
+               
                     println!("valid sign");
                     
                 }else {
