@@ -960,19 +960,28 @@ impl Node {
 
         // push all parties' publick key to a vector for TRS' tag
         let mut pubkeys: Vec<Trace_key> = vec![];
-        for (ip, pk) in self.parties_status.iter() {
-            println!("adding pk: {:?}", ip);
-            let pk_vec: Vec<u8> = pk.0.as_bytes().to_vec();
-            match Trace_key::from_bytes(&pk_vec) {
-                Some(pk_trs) => {
-
-                    pubkeys.push(pk_trs);
-                    println!("add pk to tag for trs");
+        // for (ip, pk) in self.parties_status.iter() {
+        for ip_addr in self.membership_list.iter(){
+            // println!("adding pk: {:?}", ip);
+            match self.parties_status.get(&ip_addr.clone()) {
+                Some(pk) => {
+                    let pk_vec: Vec<u8> = pk.0.as_bytes().to_vec();
+                    match Trace_key::from_bytes(&pk_vec) {
+                        Some(pk_trs) => {
+        
+                            pubkeys.push(pk_trs);
+                            println!("add pk to tag for trs");
+                        }
+                        None => {
+                            println!("trs create pk error");
+                        }
+                    }
                 }
                 None => {
-                    println!("trs create pk error");
+                    println!("party not found in status set");
                 }
             }
+            
         }
         self.trs_tag = Tag { 
             issue, 
@@ -998,19 +1007,41 @@ impl Node {
 
         // push all parties' publick key to a vector for TRS' tag
         let mut pubkeys: Vec<Trace_key> = vec![];
-        for (ip, pk) in self.parties_status.iter() {
-            println!("adding pk: {:?}", ip);
-            let pk_vec: Vec<u8> = pk.0.as_bytes().to_vec();
-            match Trace_key::from_bytes(&pk_vec) {
-                Some(pk_trs) => {
+        // for (ip, pk) in self.parties_status.iter() {
+        //     println!("adding pk: {:?}", ip);
+        //     let pk_vec: Vec<u8> = pk.0.as_bytes().to_vec();
+        //     match Trace_key::from_bytes(&pk_vec) {
+        //         Some(pk_trs) => {
 
-                    pubkeys.push(pk_trs);
-                    println!("add pk to tag for trs");
+        //             pubkeys.push(pk_trs);
+        //             println!("add pk to tag for trs");
+        //         }
+        //         None => {
+        //             println!("trs create pk error");
+        //         }
+        //     }
+        // }
+        for ip_addr in self.membership_list.iter(){
+            // println!("adding pk: {:?}", ip);
+            match self.parties_status.get(&ip_addr.clone()) {
+                Some(pk) => {
+                    let pk_vec: Vec<u8> = pk.0.as_bytes().to_vec();
+                    match Trace_key::from_bytes(&pk_vec) {
+                        Some(pk_trs) => {
+        
+                            pubkeys.push(pk_trs);
+                            println!("add pk to tag for trs");
+                        }
+                        None => {
+                            println!("trs create pk error");
+                        }
+                    }
                 }
                 None => {
-                    println!("trs create pk error");
+                    println!("party not found in status set");
                 }
             }
+            
         }
 
         // Don't need to recreate the tag

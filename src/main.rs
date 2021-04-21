@@ -7,7 +7,9 @@ mod node;
 mod tcp_socket;
 // use fujisaki_ringsig::{gen_keypair, sign, verify, Tag};
 use std::sync::mpsc::{self, TryRecvError};
-
+pub use rand::rngs::ThreadRng;
+// use rsa::{PublicKey, RSAPrivateKey, RSAPublicKey, PaddingScheme};
+use rand::rngs::OsRng;
 mod key;
 mod prelude;
 mod sig;
@@ -25,7 +27,8 @@ mod trace;
 // const channel = mpsc::channel::<String>();
 
 fn main() {
-   
+    // let r = rand::thread_rng();
+    // println!("rngr: {:?}", r);
     // Create Communication channel between threads  
     let(tx, rx) = mpsc::channel();
     
