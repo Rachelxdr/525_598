@@ -26,7 +26,7 @@ use curve25519_dalek::ristretto::{CompressedRistretto, RistrettoPoint};
 // use fujisaki_ringsig::{gen_keypair, sign, verify, Tag};
 use std::fmt;
 use sha2::Sha512;
-
+// use substring::Substring;
 // use trace;
 
 // Traceable ring github
@@ -200,7 +200,7 @@ impl Node {
                             Some(_) => (), 
                             None => {
                                 let new_party: (Trace_key, u8) = (received_pk, 0);
-                                self.parties_status.insert(src_addr.clone(), new_party);
+                                self.parties_status.insert(src_addr.get(0..(src_addr.len() - 5)).unwrap().to_string().clone(), new_party);
                                 println!("inserted new party: {:?}", src_addr.clone());
                             }
                         }
@@ -974,7 +974,8 @@ impl Node {
 
         for ip_addr in self.membership_list.iter(){
             // println!("adding pk: {:?}", ip);
-            match self.parties_status.get(&ip_addr.clone()[0..(ip_addr.len() - 5)]) {
+            // let temp = ip_addr.get(0..(ip_addr.len() - 5)).as_str();
+            match self.parties_status.get(&ip_addr.clone()) {
                 Some(pk) => {
                     let pk_vec: Vec<u8> = pk.0.as_bytes().to_vec();
                     match Trace_key::from_bytes(&pk_vec) {
