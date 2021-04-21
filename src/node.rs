@@ -974,7 +974,7 @@ impl Node {
 
         for ip_addr in self.membership_list.iter(){
             // println!("adding pk: {:?}", ip);
-            match self.parties_status.get(&ip_addr.clone()) {
+            match self.parties_status.get(&ip_addr.clone()[0..(ip_addr.len() - 5)]) {
                 Some(pk) => {
                     let pk_vec: Vec<u8> = pk.0.as_bytes().to_vec();
                     match Trace_key::from_bytes(&pk_vec) {
