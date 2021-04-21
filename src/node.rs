@@ -790,6 +790,7 @@ impl Node {
 
     }
 
+    // Function for malicious party to create the sceond trs message
     pub fn create_trs_msg_diff(&self, trs: Signature, pk_diff: PublicKey) -> Vec<u8> {
         // Vector format
         // [msg_type, spki_len, aa1_len, cs_len, num_cs, zs_len, num_zs, is_anonymous, pki_vec, aa1_vec, cs_vec, zs_vec]
@@ -975,11 +976,12 @@ impl Node {
         sign(&mut rng, &*msg_to_sign, &self.trs_tag, &self.secret_key)
     }
 
+    // function for malicious party to create another TRS using the second anonymous public key 
     pub fn create_trs_diff(&mut self, pk_diff: PublicKey) -> Signature{
         println!("creating trs");
 
         // Create issue for TRS' tag
-        let issue = b"anonymous pke".to_vec();
+        // let issue = b"anonymous pke".to_vec();
 
         // push all parties' publick key to a vector for TRS' tag
         let mut pubkeys: Vec<Trace_key> = vec![];
@@ -997,10 +999,12 @@ impl Node {
                 }
             }
         }
-        self.trs_tag = Tag { 
-            issue, 
-            pubkeys,
-        };
+
+        // Don't need to recreate the tag
+        // self.trs_tag = Tag { 
+        //     issue, 
+        //     pubkeys,
+        // };
 
         // let mut rng1 = OsRng;
         // let sk_diff = EphemeralSecret::new(rng1);
@@ -1046,7 +1050,7 @@ impl Node {
 
 
     
-
+    // Starting Byzantine party. This party sends different TRS to different parties
     pub fn start_diff(mut self) {
         println!("starting malicious node, send different anonymous keys to different parties");
         // Broadcast self unanonymoud public key
@@ -1083,11 +1087,13 @@ impl Node {
             // Create Trs message to send to other parties
             let mut spki_trs_vec: Vec<u8> = self.create_trs_msg(trs);
 
-            //Create second trs
+            //Create second trs with another anonymous public key
             let mut rng1 = OsRng;
             let sk_diff = EphemeralSecret::new(rng1);
             let pk_diff = PublicKey::from(&sk_diff);
             let trs_multi:Signature = self.create_trs_diff(pk_diff);
+
+            // Create second TRS message
             let mut spki_trs_vec_diff: Vec<u8> = self.create_trs_msg_diff(trs_multi, pk_diff);
 
             println!("created different trs vec");

@@ -49,6 +49,7 @@ fn main() {
             test_node.start_honest();
             break;
         } else if buff == "B\n".to_string(){
+            // Starting Byzantine party. This party will send different TRS to different parties
             test_node.start_diff();
             break;
         } else {
