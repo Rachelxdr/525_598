@@ -13,6 +13,7 @@ use std::sync::mpsc::{self, TryRecvError};
 use std::{thread, time};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
+pub use rand::rngs::ThreadRng;
 // use rsa::{PublicKey, RSAPrivateKey, RSAPublicKey, PaddingScheme};
 use rand::rngs::OsRng;
 use rand_core::{RngCore, Error, impls};
@@ -57,6 +58,7 @@ use crate::{
 //To install rust and cargo on vms:
 //1. curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 //2. source $HOME/.cargo/env
+// const TRS_RNG:ThreadRng = rand::thread_rng();
 const NUM_PARTIES: usize = 7;
 const TRS_VEC_SIZE: usize = 32;
 const MSG_SIZE:usize = 2048;
@@ -950,7 +952,7 @@ impl Node {
     }
 
     // 
-    pub fn create_trs(&mut self) -> Signature{
+    pub fn create_trs(&mut self, mut trs_rng: ThreadRng) -> Signature{
         println!("creating trs");
 
         // Create issue for TRS' tag
@@ -981,14 +983,14 @@ impl Node {
         let msg_to_sign = self.spk.as_bytes();
 
         // Create random value as TRS' parameter
-        let mut rng = rand::thread_rng();
+        // let mut rng = rand::thread_rng();
 
         // Sign the message
-        sign(&mut rng, &*msg_to_sign, &self.trs_tag, &self.secret_key)
+        sign(&mut trs_rng, &*msg_to_sign, &self.trs_tag, &self.secret_key)
     }
 
     // function for malicious party to create another TRS using the second anonymous public key 
-    pub fn create_trs_diff(&mut self, pk_diff: PublicKey) -> Signature{
+    pub fn create_trs_diff(&mut self, pk_diff: PublicKey, mut trs_rng: ThreadRng) -> Signature{
         println!("creating trs");
 
         // Create issue for TRS' tag
@@ -1024,10 +1026,10 @@ impl Node {
         let msg_to_sign = pk_diff.as_bytes();
 
         // Create random value as TRS' parameter
-        let mut rng = rand::thread_rng();
+        // let mut rng = rand::thread_rng();
 
         // Sign the message
-        sign(&mut rng, &*msg_to_sign, &self.trs_tag, &self.secret_key)
+        sign(&mut trs_rng, &*msg_to_sign, &self.trs_tag, &self.secret_key)
     }
 
     pub fn multicast_trs(&mut self, trs_vec: Vec<u8>) {
@@ -1088,7 +1090,8 @@ impl Node {
             }
 
             // Create traceable Signature ring
-            let trs: Signature = self.create_trs();
+            let trs_rng:ThreadRng = rand::thread_rng();
+            let trs: Signature = self.create_trs(trs_rng);
             
 
             let aa1_r: RistrettoPoint = trs.aa1.clone();
@@ -1102,7 +1105,7 @@ impl Node {
             let mut rng1 = OsRng;
             let sk_diff = EphemeralSecret::new(rng1);
             let pk_diff = PublicKey::from(&sk_diff);
-            let trs_multi:Signature = self.create_trs_diff(pk_diff);
+            let trs_multi:Signature = self.create_trs_diff(pk_diff, trs_rng);
 
             // Create second TRS message
             let mut spki_trs_vec_diff: Vec<u8> = self.create_trs_msg_diff(trs_multi, pk_diff);
@@ -1166,7 +1169,8 @@ impl Node {
                 }
 
                 // Create traceable Signature ring
-                let trs: Signature = self.create_trs();
+                let trs_rng:ThreadRng = rand::thread_rng();
+                let trs: Signature = self.create_trs(trs_rng);
 
                 let aa1_r: RistrettoPoint = trs.aa1.clone();
                 let cs_r: Vec<Scalar> = trs.cs.clone();
