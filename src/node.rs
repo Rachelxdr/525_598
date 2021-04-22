@@ -59,8 +59,8 @@ use crate::{
 //1. curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 //2. source $HOME/.cargo/env
 // const TRS_RNG:ThreadRng = rand::thread_rng();
-const NUM_PARTIES: usize = 7;
-const NUM_MAL: usize = 2;
+const NUM_PARTIES: usize = 10;
+const NUM_MAL: usize = 6;
 
 const TRS_VEC_SIZE: usize = 32;
 const MSG_SIZE:usize = 2048;
@@ -125,11 +125,14 @@ impl Node {
             membership_list: 
                 vec!["172.22.94.218".to_string(), // vm1
                      "172.22.156.221".to_string(), // vm2
-                     "172.22.94.219".to_string(), // vm3
-                     "172.22.156.222".to_string(), // vm4
-                     "172.22.94.220".to_string(), // vm5
-                     "172.22.156.223".to_string(), // vm6
-                     "172.22.94.221".to_string()], // vm7
+                     "172.22.158.219".to_string(), //vm3
+                     "172.22.94.219".to_string(), // vm4
+                     "172.22.156.222".to_string(), // vm5
+                     "172.22.158.220".to_string(), //vm6
+                     "172.22.94.220".to_string(), // vm7
+                     "172.22.156.223".to_string(), // vm8
+                     "172.22.158.221".to_string(), //vm9
+                     "172.22.94.221".to_string()], // vm10
             // Map to keep track of status of other members
             parties_status: HashMap::new(),
             signatures_set: HashMap::new(),
@@ -1419,15 +1422,15 @@ pub fn server_thread_create(tx: std::sync::mpsc::Sender<Vec<u8>> ) {
                 // tx.send(result).expect("failed to send msg to rx");
                 match tx.send(result) {
                     Ok(r) => {
-                        println!("Server thread send successfully!");
+                        // println!("Server thread send successfully!");
                     }
                     Err(e) => {
-                        println!("Server thread send error {:?}, client stop receiving!", e);
+                        // println!("Server thread send error {:?}, client stop receiving!", e);
                         continue;
                     }
                 }
                 
-                println!("pushed received message to the channel");
+                // println!("pushed received message to the channel");
             }, 
             Err(ref err) if err.kind() == ErrorKind::WouldBlock => (),
             Err(fail) => println!("failed listening {:?}", fail)
