@@ -59,7 +59,7 @@ use crate::{
 //1. curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 //2. source $HOME/.cargo/env
 // const TRS_RNG:ThreadRng = rand::thread_rng();
-const NUM_PARTIES: usize = 10;
+const NUM_PARTIES: usize = 9;
 const NUM_MAL: usize = 6;
 
 const TRS_VEC_SIZE: usize = 32;
@@ -131,7 +131,7 @@ impl Node {
                      "172.22.158.220".to_string(), //vm6
                      "172.22.94.220".to_string(), // vm7
                      "172.22.156.223".to_string(), // vm8
-                     "172.22.158.221".to_string(), //vm9
+                    //  "172.22.158.221".to_string(), //vm9
                      "172.22.94.221".to_string()], // vm10
             // Map to keep track of status of other members
             parties_status: HashMap::new(),
