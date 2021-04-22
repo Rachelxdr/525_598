@@ -61,21 +61,8 @@ fn main() {
             continue;
         }
     }
-    // io::stdin().read_line(&mut buff).expect("reading from stdin failed");
-    // println!("buff: [{}]", buff);
-    // if buff == "H\n".to_string(){
-    //     test_node.start_honest();
-    // }
-    // test_node.start_honest();
-
-    
-    // test_node.send_message("hello from client1".to_string());
-    // test_node.send_message("hello from client2".to_string());
-    // test_node.send_message("hello from client3".to_string());
-    // test_node.send_message("hello from client4".to_string());
-    // test_node.send_message("hello from client5".to_string());
-    // test_node.send_message("hello from client6".to_string());
+   
     let server_res = server_thread.join();
-    // println!("{:?}", bt);
+
 }
 

@@ -155,21 +155,8 @@ impl Node {
     // Function to process messages received from other parties
     fn process_message(&mut self, mut msg:Vec<u8>) {
 
-       // Parse message
+       // Get message type
         let msg_type: u8 = msg[0];
-        // let msg_len: u8 = msg[1];
-        // let is_anonymous: u8 = msg[2];
-
-        // Slice off the mesage content
-        // let msg_end: usize = (msg_len + 3).into();
-        // let msg_vec: Vec<u8> = (&msg[3..msg_end]).to_vec();
-        // let mut src_addr:String = "".to_string();
-        // if (is_anonymous == 0) {
-        //     let addr_vec: Vec<u8> = (&msg[msg_end..]).to_vec();
-        // Get the source address of unanonymous message
-        //     src_addr = src_addr.replace("", &String::from_utf8(addr_vec).unwrap());
-        //     println!("src_addr parsed: {:?}", src_addr);
-        // }
 
 
         // Parse message based on message type
@@ -187,7 +174,7 @@ impl Node {
                 let addr_vec: Vec<u8> = (&msg[msg_end..]).to_vec();
                 // Get the source address of unanonymous message
                 src_addr = src_addr.replace("", &String::from_utf8(addr_vec).unwrap());
-                println!("src_addr parsed: {:?}", src_addr);
+                // println!("src_addr parsed: {:?}", src_addr);
             }
             // Recreate publick key using bytes received
             match Trace_key::from_bytes(&msg_vec) {
@@ -201,17 +188,17 @@ impl Node {
                             None => {
                                 let new_party: (Trace_key, u8) = (received_pk, 0);
                                 self.parties_status.insert(src_addr.get(0..(src_addr.len() - 5)).unwrap().to_string().clone(), new_party);
-                                println!("inserted new party: {:?}", src_addr.clone());
+                                // println!("inserted new party: {:?}", src_addr.clone());
                             }
                         }
                     } else {
-                        println!("error src_addr");
+                        // println!("error src_addr");
                     }
                     
     
                 }, 
                 None => {
-                    println!("incoming key error");
+                    // println!("incoming key error");
                 } 
             }
         } else if (msg_type == 1) { // Other party's TRS information
@@ -226,9 +213,9 @@ impl Node {
                 self.signature_byte_set.insert(msg.clone());
             }
 
-            println!("inserted new signature vec to byte set");
+            // println!("inserted new signature vec to byte set");
 
-            println!("decodeing signatures");
+            // println!("decodeing signatures");
             // [msg_type, spki_len, aa1_len, cs_len, num_cs, zs_len, num_zs, is_anonymous, pki_vec, aa1_vec, cs_vec, zs_vec]
             // Decode trs msg vector
 
@@ -255,10 +242,10 @@ impl Node {
             let zs_index_end: usize = zs_index + zs_len;
 
             // For debugging
-            println!("spk_len: {:?}, spk_index : {:?}, spk_index_end: {:?}", spk_len, spk_index, spk_index_end);
-            println!("aa1_len: {:?}, aa1_index : {:?}, aa1_index_end: {:?}", aa1_len, aa1_index, aa1_index_end);
-            println!("cs_len: {:?}, num_cs: {:?}, cs_index : {:?}, cs_index_end: {:?}",cs_len, num_cs, cs_index, cs_index_end);
-            println!("zs_len: {:?}, num_zs: {:?}, zs_index : {:?}, zs_index_end: {:?}", zs_len, num_zs, zs_index, zs_index_end);
+            // println!("spk_len: {:?}, spk_index : {:?}, spk_index_end: {:?}", spk_len, spk_index, spk_index_end);
+            // println!("aa1_len: {:?}, aa1_index : {:?}, aa1_index_end: {:?}", aa1_len, aa1_index, aa1_index_end);
+            // println!("cs_len: {:?}, num_cs: {:?}, cs_index : {:?}, cs_index_end: {:?}",cs_len, num_cs, cs_index, cs_index_end);
+            // println!("zs_len: {:?}, num_zs: {:?}, zs_index : {:?}, zs_index_end: {:?}", zs_len, num_zs, zs_index, zs_index_end);
 
             // Create incoming party's anonymous public key vector
             let spk_vec: Vec<u8> = (&msg[spk_index..spk_index_end]).to_vec();
@@ -366,7 +353,7 @@ impl Node {
                 None=> {
                     // self.signatures_set.insert(received_spk.clone(), re_trs);
                     self.signatures_set.insert(spk_vec.clone(), re_trs);
-                    println!("inserted new signature!");
+                    // println!("inserted new signature!");
                 }
             }
 
@@ -377,7 +364,7 @@ impl Node {
                 // self.signature_byte_set.insert(msg.clone());
             
 
-                println!("decodeing NEW signatures");
+                // println!("decodeing NEW signatures");
                 let spk_len: usize = msg[1].into();
                 let aa1_len: usize = msg[2].into();
                 let cs_len: usize = msg[3].into();
@@ -499,13 +486,13 @@ impl Node {
                 // match self.signatures_set.get(&received_spk) {
                 match self.signatures_set.get(&spk_vec) {
                     Some(_) => {
-                        println!("NEW decode, NOthing to the map!");
+                        // println!("NEW decode, NOthing to the map!");
                     },
                     None=> {
                         // self.signatures_set.insert(received_spk.clone(), re_trs);
                         self.signatures_set.insert(spk_vec.clone(), re_trs);
                         
-                        println!("inserted new signature FROM SET!");
+                        // println!("inserted new signature FROM SET!");
                     }
 
                 }
@@ -567,7 +554,7 @@ impl Node {
            
             match self.rx.try_recv() {
                 Ok(msg) => {
-                    println!("received from channel");
+                    // println!("received from channel");
                     // Process received mesasge
                     &self.process_message(msg.clone());
                     // msg_received.push(msg);
@@ -577,16 +564,16 @@ impl Node {
                     //Stop receiving message when all the parties' info is received
                     // TODO: Merge all process received functions together and use mutex lock
                     if (self.parties_status.len() == NUM_PARTIES) {
-                        println!("party status len is 1");
+                        // println!("party status len is 1");
                         break;
                     }
                 },
                 Err(TryRecvError::Disconnected) => {
-                    println!("disconnected");
+                    // println!("disconnected");
                     break;
                 },
                 Err(e) => {
-                    println!("other error : {:?}", e);
+                    // println!("other error : {:?}", e);
                     break;
                 }
             }
@@ -604,7 +591,7 @@ impl Node {
             
             match self.rx.try_recv() {
                 Ok(msg) => {
-                    println!("process_received_trs_byte received from channel");
+                    // println!("process_received_trs_byte received from channel");
                     // Process received mesasge
                     &self.process_message(msg.clone());
                     // msg_received.push(msg);
@@ -613,22 +600,22 @@ impl Node {
                 Err(TryRecvError::Empty) => {
                     //TODO 3/31 evening: set the threshold right
                     if (self.signatures_set.len() == NUM_PARTIES + 1 && num_empty >= self.membership_list.len() * self.membership_list.len() * self.signature_byte_set.len()) {
-                        println!("process_received_trs_byte full");
+                        // println!("process_received_trs_byte full");
                         break;
                     }
                     if (num_empty % 50 == 0) {
-                        println!("num_empty: {:?}", num_empty);
+                        // println!("num_empty: {:?}", num_empty);
                     }
                     num_empty += 1;
                     // println!("No more msgs");
                     // break;
                 },
                 Err(TryRecvError::Disconnected) => {
-                    println!("disconnected");
+                    // println!("disconnected");
                     break;
                 },
                 Err(e) => {
-                    println!("other error : {:?}", e);
+                    // println!("other error : {:?}", e);
                     break;
                 }
             }
@@ -643,7 +630,7 @@ impl Node {
             
             match self.rx.try_recv() {
                 Ok(msg) => {
-                    println!("process_received_trs received from channel");
+                    // println!("process_received_trs received from channel");
                     // Process received mesasge
                     &self.process_message(msg.clone());
                     // msg_received.push(msg);
@@ -651,18 +638,17 @@ impl Node {
                 },
                 Err(TryRecvError::Empty) => {
                     if (self.signature_byte_set.len() == NUM_PARTIES) {
-                        println!("process_received_trs full");
+                        // println!("process_received_trs full");
                         break;
                     }
-                    // println!("No more msgs");
-                    // break;
+      
                 },
                 Err(TryRecvError::Disconnected) => {
-                    println!("disconnected");  
+                    // println!("disconnected");  
                     break;
                 },
                 Err(e) => {
-                    println!("other error : {:?}", e);
+                    // println!("other error : {:?}", e);
                     break;
                 }
             }
@@ -670,29 +656,7 @@ impl Node {
 
         
     }
-    // fn client_process(&self) {
-    //     let mut msg_received: Vec<String> = vec![];
-    //     loop {
-    //         match self.client_receiver.try_recv() {
-    //             Ok(msg) => {
-    //                 println!("received from channel");
-    //                 msg_received.push(msg);
-    //             },
-    //             Err(TryRecvError::Empty) => {
-    //                 println!("No more msgs");
-    //                 // break;
-    //             },
-    //             Err(TryRecvError::Disconnected) => {
-    //                 println!("disconnected");
-    //                 break;
-    //             }
-    //         }
-    //     }
 
-    //     for m in msg_received.iter() {
-    //         println!("client received message {:?}", m);
-    //     }
-    // }
     
     // Function to put party's traceable ring signature into bytes for boradcast
     pub fn create_trs_msg(&self, trs: Signature) -> Vec<u8> {
@@ -921,7 +885,7 @@ impl Node {
                 // if((Trace::Linked == trace(&*msg_to_verify, &sig, &*msg_to_verify_a, &sig_a, &self.trs_tag))) {
                 if((Trace::Linked == trace(&*spk_map, &sig, &*spk_map_a, &sig_a, &self.trs_tag))) {
                    
-                    println!("linked");
+                    // println!("linked");
                     // if (spk_map == spk_map_a) {
                     //     println!("same message");
                     // } else {
@@ -931,10 +895,12 @@ impl Node {
                 // } else if ((Trace::Indep == trace(&*msg_to_verify, &sig, &*msg_to_verify_a, &sig_a, &self.trs_tag))) {
                 } else if ((Trace::Indep == trace(&*spk_map, &sig, &*spk_map_a, &sig_a, &self.trs_tag))) {
                
-                    println!("valid sign");
+                    // println!("valid sign");
                     
                 }else {
-                    println!("revealed");
+                    to_remove.push(spk_map.to_vec());
+                    to_remove.push(spk_map_a.to_vec());
+                    // println!("revealed");
                 }
             }
         }
@@ -942,10 +908,10 @@ impl Node {
         for remove_key in to_remove {
             match self.signatures_set.remove(&remove_key) {
                 Some(_) => {
-                    println!("removed key");
+                    // println!("removed key");
                 }, 
                 None => {
-                    println!("non exist");
+                    // println!("non exist");
                 }
             }
         }
@@ -953,7 +919,7 @@ impl Node {
 
     // 
     pub fn create_trs(&mut self, mut trs_rng: ThreadRng) -> Signature{
-        println!("creating trs");
+        // println!("creating trs");
 
         // Create issue for TRS' tag
         let issue = b"anonymous pke".to_vec();
@@ -961,14 +927,14 @@ impl Node {
         // push all parties' publick key to a vector for TRS' tag
         let mut pubkeys: Vec<Trace_key> = vec![];
         // for (ip, pk) in self.parties_status.iter() {
-        for ip_addr in self.membership_list.iter(){
-            println!("ipaddr: {:?}", ip_addr.clone());
-        }
+        // for ip_addr in self.membership_list.iter(){
+        //     println!("ipaddr: {:?}", ip_addr.clone());
+        // }
 
 
-        for (ip, pk) in self.parties_status.iter(){
-            println!("ipaddr: {:?}", ip.clone());
-        }
+        // for (ip, pk) in self.parties_status.iter(){
+        //     println!("ipaddr: {:?}", ip.clone());
+        // }
 
 
 
@@ -982,15 +948,15 @@ impl Node {
                         Some(pk_trs) => {
         
                             pubkeys.push(pk_trs);
-                            println!("add pk to tag for trs");
+                            // println!("add pk to tag for trs");
                         }
                         None => {
-                            println!("trs create pk error");
+                            // println!("trs create pk error");
                         }
                     }
                 }
                 None => {
-                    println!("party not found in status set");
+                    // println!("party not found in status set");
                 }
             }
             
@@ -1012,7 +978,7 @@ impl Node {
 
     // function for malicious party to create another TRS using the second anonymous public key 
     pub fn create_trs_diff(&mut self, pk_diff: PublicKey, mut trs_rng: ThreadRng) -> Signature{
-        println!("creating trs");
+        // println!("creating trs");
 
         // Create issue for TRS' tag
         // let issue = b"anonymous pke".to_vec();
@@ -1042,15 +1008,15 @@ impl Node {
                         Some(pk_trs) => {
         
                             pubkeys.push(pk_trs);
-                            println!("add pk to tag for trs");
+                            // println!("add pk to tag for trs");
                         }
                         None => {
-                            println!("trs create pk error");
+                            // println!("trs create pk error");
                         }
                     }
                 }
                 None => {
-                    println!("party not found in status set");
+                    // println!("party not found in status set");
                 }
             }
             
@@ -1086,15 +1052,15 @@ impl Node {
 
     pub fn multicast_trs_diff(&mut self, trs_vec: Vec<u8>, trs_vec_diff: Vec<u8>) {
         // Iterate through membership list and send trs message to all parties
-        // let r = 0;
+        // Send different public key to different parties
         let mut r = 1;
         for party in self.membership_list.iter() {
 
             if (r % 2 == 0) {
-                println!("sending trs1");
+                // println!("sending trs1");
                 self.send_message(party.to_string(), trs_vec.clone());
             } else{
-                println!("sending trs2");
+                // println!("sending trs2");
                 self.send_message(party.to_string(), trs_vec_diff.clone());
             }
             r = r + 1;
@@ -1110,30 +1076,31 @@ impl Node {
     pub fn start_diff(mut self) {
         println!("starting malicious node, send different anonymous keys to different parties");
         // Broadcast self unanonymoud public key
+        println!("Broadcasting unanonymous public key...");
         &self.client_start();
         
         
         // Create client thread
         let client_thread = thread::spawn(move || loop {
             // Sleep for 2 seconds
-            thread::sleep(time::Duration::from_millis(2000));
+            // thread::sleep(time::Duration::from_millis(2000));
 
             // Receive messages
             &self.process_received();
-            println!("received done, len: {:?}", self.parties_status.len());
-
+            println!("All members unanonymous public key received");
             // Receive initial message again if not all parties' information are received
             if (self.parties_status.len() < NUM_PARTIES) {
                 continue;
             }
 
             // Print for debug purpose
-            for (key, val) in self.parties_status.iter() {
-                println!("src: {:?} flag: {:?}", key, val.1);
-            }
+            // for (key, val) in self.parties_status.iter() {
+            //     println!("src: {:?} flag: {:?}", key, val.1);
+            // }
 
             // Create traceable Signature ring
             let trs_rng:ThreadRng = rand::thread_rng();
+            println!("Creating Traceable ring signature...");
             let trs: Signature = self.create_trs(trs_rng);
             
 
@@ -1151,26 +1118,35 @@ impl Node {
             let trs_multi:Signature = self.create_trs_diff(pk_diff, trs_rng);
 
             // Create second TRS message
+            println!("Creating second Traceable ring signature...");
             let mut spki_trs_vec_diff: Vec<u8> = self.create_trs_msg_diff(trs_multi, pk_diff);
 
-            println!("created different trs vec");
+            println!("Broadcasting Traceable ring signature...");
             // Send trs message vector to all other parties
             &self.multicast_trs_diff(spki_trs_vec.clone(), spki_trs_vec_diff.clone());
             
             // Receive and process TRS of other parties
+            println!("Collecting all TRS...");
             &self.process_received_trs(); // 
 
             // Send the set of received TRS to other parties
+            println!("Broadcasting TRS set...");
             &self.multicast_trs_set();
 
             // Process the received trs byte
+            println!("Creating TRS union...");
             &self.process_received_trs_byte(); 
 
 
             // Verify the autheniticity of received TRS
+            println!("Verifying TRS...");
             &self.verify_trs();
 
-            println!("YAY_DIFF");
+            println!("Result:");
+            for (spk_map, sig) in self.signatures_set.iter() {
+                println!("{:?}", spk_map);
+                println!("============================================================");
+            }
 
             
             break;
@@ -1188,18 +1164,20 @@ impl Node {
         // Hardcode membership list for now
         
             println!("starting honest node");
-             // Broadcast self unanonymoud public key
+             // Broadcast self unanonymous public key
+            println!("Broadcasting unanonymous public key...");
             &self.client_start();
             
             
             // Create client thread
             let client_thread = thread::spawn(move || loop {
                 // Sleep for 2 seconds
-                thread::sleep(time::Duration::from_millis(2000));
+                // thread::sleep(time::Duration::from_millis(2000));
 
                 // Receive messages
                 &self.process_received();
-                println!("received done, len: {:?}", self.parties_status.len());
+                println!("All members unanonymous public key received");
+                // println!("received done, len: {:?}", self.parties_status.len());
 
                 // Receive initial message again if not all parties' information are received
                 if (self.parties_status.len() < NUM_PARTIES) {
@@ -1207,12 +1185,15 @@ impl Node {
                 }
 
                 // Print for debug purpose
-                for (key, val) in self.parties_status.iter() {
-                    println!("src: {:?} flag: {:?}", key, val.1);
-                }
+                // for (key, val) in self.parties_status.iter() {
+                //     println!("src: {:?} flag: {:?}", key, val.1);
+                // }
 
                 // Create traceable Signature ring
                 let trs_rng:ThreadRng = rand::thread_rng();
+
+
+                println!("Creating Traceable ring signature...");
                 let trs: Signature = self.create_trs(trs_rng);
 
                 let aa1_r: RistrettoPoint = trs.aa1.clone();
@@ -1223,22 +1204,31 @@ impl Node {
                 let mut spki_trs_vec: Vec<u8> = self.create_trs_msg(trs);
 
                 // Send trs message vector to all other parties
+                println!("Broadcasting Traceable ring signature...");
                 &self.multicast_trs(spki_trs_vec.clone());
                 
                 // Receive and process TRS of other parties
+                println!("Collecting all TRS...");
                 &self.process_received_trs(); // 
 
                 // Send the set of received TRS to other parties
+                println!("Broadcasting TRS set...");
                 &self.multicast_trs_set();
 
                 // Process the received trs byte
+                println!("Creating TRS union...");
                 &self.process_received_trs_byte(); 
 
 
                 // Verify the autheniticity of received TRS
+                println!("Verifying TRS...");
                 &self.verify_trs();
 
-                println!("YAY");
+                println!("Result:");
+                for (spk_map, sig) in self.signatures_set.iter() {
+                    println!("{:?}", spk_map);
+                    println!("============================================================");
+                }
 
                 
                 break;
@@ -1309,138 +1299,67 @@ impl Node {
 
     }
 
+    // Function to send party's unanonymous public key to other parties
     pub fn client_start(&self){
         let mut msg: String = String::new();
         msg.push_str("[0]::");
-        // println!("pk before send: {:?}", self.public_key);
+        
+        // Convert public key to byte to send
         let mut public_key_vec: Vec<u8> = self.public_key.as_bytes();
         let mut my_vec: Vec<u8> = vec![1];
-        // my_vec.append(& mut public_key_vec.clone());
-        // println!("my_vec: {:?}", my_vec);
-        println!("public_key_vec: {:?}", public_key_vec);
         
-        let received_pk: Trace_key;
+        
+        // let received_pk: Trace_key;
         let msg_to_send: Vec<u8> = self.create_msg(public_key_vec.clone(), 0, 0);
-        let ref_vec: &[u8] = &msg_to_send[3..];
-        println!("msg_to_send: {:?}", msg_to_send);
-        match Trace_key::from_bytes(ref_vec) {
-            Some(incoming_pk) => {
-                received_pk = incoming_pk;
-                // println!("incoming key decoded before send: {:?}", received_pk);
-                assert_eq!(received_pk, self.public_key);
-                println!("assert passed");
-            }, 
-            None => {
-                println!("incoming key error");
-            } 
-        }
+        // let ref_vec: &[u8] = &msg_to_send[3..];
+        // println!("msg_to_send: {:?}", msg_to_send);
+        // match Trace_key::from_bytes(ref_vec) {
+        //     Some(incoming_pk) => {
+        //         received_pk = incoming_pk;
+        //         // println!("incoming key decoded before send: {:?}", received_pk);
+        //         assert_eq!(received_pk, self.public_key);
+        //         println!("assert passed");
+        //     }, 
+        //     None => {
+        //         println!("incoming key error");
+        //     } 
+        // }
         
-        // create_msg(public_key_vec.clone(), 0);
-        // let public_str = String::from_utf8_lossy(&public_key_vec);
-        // let public_str = String::from_utf8_lossy(&public_key_vec);
-        // println!("public_str:{:?}", public_str);
-        // match &public_str.unwrap() {
-        //     Ok(pub_str) => {
-        //         msg.push_str(pub_str);
-        //     },
-        //     Err(e) => {
-        //         println!("err utf8:{:?}", e);
-        //     }
-        
-        // msg.push_str(&public_str);
-        // msg.push_str(self.public_key.as_bytes().to_owned());
-        // println!("sending to {}, msg: {}", INTRODUCER_IP.to_string(), msg);
+        // Send public key vector to all parties
         for party in self.membership_list.iter() {
             self.send_message(party.to_string(), msg_to_send.clone());
         }
         // self.send_message(INTRODUCER_IP.to_string(), msg_to_send);
     }
 
-    // pub fn send_message_bytes(&self, target: String, msg: Vec<u8>) {
-
-    // }
-
-
+    // Function to send message
     pub fn send_message(&self, target: String, msg: Vec<u8>) {
         thread::sleep(time::Duration::from_millis(2000));
-        // println!("client send message");
+        
+        
+        // Get the host address
         let host_name = dns_lookup::get_hostname().unwrap();
         let ip_addr: Vec<IpAddr> = lookup_host(&host_name).unwrap();
         let mut bind_param = ip_addr[0].to_string();
         bind_param.push_str(CLIENT_PORT);
 
-        let local_param = "192.168.31.154:6001".to_string();
+        // let local_param = "192.168.31.154:6001".to_string();
 
+        // Bind to UDP socket
         let socket = net::UdpSocket::bind(bind_param).expect("client failed to bind");
 
         let mut connect_param = target.clone();
         connect_param.push_str(PORT);
-        // let socket = net::UdpSocket::bind(connect_param.clone()).expect("client failed to bind");
-
-        // println!("target: {}, msg: {:?}", connect_param.clone(), msg);
-        // let mut target = net::UdpSocket::bind(connect_param).expect("client Stream failed to connect");
-        // target.set_nonblocking(true).expect("client failed to initialize non-blocking");
-        // let mut buff = vec![0; MSG_SIZE];
-
-        // let mut msg_string: String = String::new();
-        // msg_string.push_str("hello world");
-
-
-        // let buff = msg.clone().into_bytes();
-        // println!("msg_vec: {:?}", msg);
-        match socket.send_to(&msg, connect_param){
-            Ok(number_of_bytes) => println!("bytes sent: {:?}", number_of_bytes),
-            Err(fail) => println!("failed sending {:?}", fail),
-        }
-        // target.write_all(&buff).expect("client writing to socket failed");
-
-        println!("msg sent!");
-
-
-        // let(tx_client, rx_client) = mpsc::channel::<String>();
-
-        // thread::spawn(move || loop{
-        //     let mut buff = vec![0; MSG_SIZE];
-        //     // match target.read_exact(&mut buff) {
-        //     //     Ok(_) => {
-        //     //         // println!("read exact buf: {:?}", buff);
-        //     //         let msg = buff.into_iter().take_while(|&x| x != 0).collect::<Vec<_>>();
-        //     //         println!("message recv {:?}", msg);
-        //     //     }, 
-        //     //     Err (ref err) if err.kind() == ErrorKind::WouldBlock => (),
-        //     //     Err(_) => {
-        //     //         println!("connection with server was severed");
-        //     //         break;
-        //     //     }
-        //     // }
-        //     // TODO process received message
-        //     match rx_client.try_recv() {
-        //         Ok(msg_string)=> {
-        //             let mut buff = msg_string.clone().into_bytes();
-        //             buff.resize(MSG_SIZE, 0);
-        //             target.write_all(&buff).expect("client writing to socket failed");
-        //             println!("message to process  {:?}", msg_string);
-        //         }, 
-        //         Err(TryRecvError::Empty) => (),
-        //         Err(TryRecvError::Disconnected) => break
-        //     }
-        //     thread::sleep(time::Duration::from_millis(1000));
-
-        // });
-
-        // println!("Sending message...:{}", msg);
-        // // tx.send(msg);
-        // // tx.send("1111111111".to_string());
-        // loop {
-        //     // tx.send("1111111111".to_string());
-        //     tx_client.send(msg.clone());
-        //     thread::sleep(time::Duration::from_millis(2000));
-        // }
-    }
-
-    pub fn honest() {
         
+        // Send UDP packet
+        match socket.send_to(&msg, connect_param){
+            Ok(number_of_bytes) => {},
+            Err(fail) => {},
+        }
+       
     }
+
+
 
     // Function to create the ID of a party
     fn create_id() -> String {
