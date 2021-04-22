@@ -60,6 +60,8 @@ use crate::{
 //2. source $HOME/.cargo/env
 // const TRS_RNG:ThreadRng = rand::thread_rng();
 const NUM_PARTIES: usize = 7;
+const NUM_MAL: usize = 2;
+
 const TRS_VEC_SIZE: usize = 32;
 const MSG_SIZE:usize = 2048;
 const INTRODUCER_IP: &str = "192.168.31.154"; // 192.168.31.154 for local test, 172.22.94.218 for vm test, "10.193.227.18"
@@ -599,7 +601,7 @@ impl Node {
                 },
                 Err(TryRecvError::Empty) => {
                     //TODO 3/31 evening: set the threshold right
-                    if (self.signatures_set.len() == NUM_PARTIES + 1 && num_empty >= self.membership_list.len() * self.membership_list.len() * self.signature_byte_set.len()) {
+                    if (self.signatures_set.len() == NUM_PARTIES + NUM_MAL && num_empty >= self.membership_list.len() * self.membership_list.len() * self.signature_byte_set.len()) {
                         // println!("process_received_trs_byte full");
                         break;
                     }
@@ -1334,7 +1336,7 @@ impl Node {
 
     // Function to send message
     pub fn send_message(&self, target: String, msg: Vec<u8>) {
-        thread::sleep(time::Duration::from_millis(2000));
+        // thread::sleep(time::Duration::from_millis(2000));
         
         
         // Get the host address
@@ -1432,7 +1434,7 @@ pub fn server_thread_create(tx: std::sync::mpsc::Sender<Vec<u8>> ) {
         }
         // Sleep before next round
         // println!("thread finishing");
-        std::thread::sleep(sleep_period);
+        // std::thread::sleep(sleep_period);
     }
     println!("thread finishing");
 }
