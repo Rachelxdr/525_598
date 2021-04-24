@@ -33,7 +33,7 @@ fn main() {
     let mut buff = String::new();
     loop {
         io::stdin().read_line(&mut buff).expect("reading from stdin failed");
-        println!("buff: [{}]", buff);
+
         if buff == "H\n".to_string(){
             //Starting a honest party
             test_node.start_honest();
