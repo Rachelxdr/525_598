@@ -37,7 +37,7 @@ const NUM_MAL: usize = 3;
 
 const TRS_VEC_SIZE: usize = 32;
 const MSG_SIZE:usize = 2048;
-const INTRODUCER_IP: &str = "192.168.31.154"; // 192.168.31.154 for local test, 172.22.94.218 for vm test, "10.193.227.18"
+const INTRODUCER_IP: &str = "192.168.31.154";
 const PORT: &str = ":6000";
 const CLIENT_PORT: &str = ":6001";
 pub struct Node {
@@ -91,7 +91,7 @@ impl Node {
             local_clock: 0,
             status: 0,
             tcp_util: Tcp_socket::new(),
-            // Information of other nodes (TODO: Add to configuration file)
+            // Information of other nodes
             membership_list: 
                 vec!["172.22.94.218".to_string(), // vm1
                      "172.22.156.221".to_string(), // vm2

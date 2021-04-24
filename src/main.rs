@@ -11,6 +11,7 @@ mod key;
 mod prelude;
 mod sig;
 mod trace;
+use std::process;
 
 
 
@@ -47,7 +48,7 @@ fn main() {
             continue;
         }
     }
-   
+    process::exit(0x0);
     let server_res = server_thread.join();
 
 }
