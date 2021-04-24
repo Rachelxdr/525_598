@@ -899,18 +899,6 @@ impl Node {
             println!("Creating TRS union...");
             &self.process_received_trs_byte(); 
 
-
-            // Verify the autheniticity of received TRS
-            println!("Verifying TRS...");
-            &self.verify_trs();
-
-            println!("Result:");
-            for (spk_map, sig) in self.signatures_set.iter() {
-                println!("{:?}", spk_map);
-                println!("============================================================");
-            }
-
-            
             break;
         });
 
