@@ -962,10 +962,35 @@ impl Node {
                 &self.verify_trs();
 
                 println!("Result:");
+                let mut result_vec: Vec<Vec<u8>> = vec![];
                 for (spk_map, sig) in self.signatures_set.iter() {
-                    println!("{:?}", spk_map);
+                    // println!("{:?}", spk_map);
+                    // println!("============================================================");
+                    result_vec.push(spk_map.to_vec());
+                }
+
+                result_vec.sort();
+
+                for v in result_vec.iter() {
+                    println!("{:?}", v);
                     println!("============================================================");
                 }
+
+                // for ip_addr in self.membership_list.iter() {
+                //     match self.parties_status.get(&ip_addr.clone()) {
+                //         some(pk) => {
+                //             let pk_vec: Vec<u8> = pk.0.as_bytes().to_vec();
+                //             match Trace_key::from_bytes(&pk_vec) {
+                //                 Some(pk_trs) => {
+                //                     pubkeys.push(pk_trs);
+                //                 }
+                //                 None => {
+
+                //                 }
+                //             }
+                //         }
+                //     }
+                // }
 
                 
                 break;
